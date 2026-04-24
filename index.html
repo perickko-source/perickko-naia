@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ATRAPA EMOJIS CON NAIA</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; -webkit-user-select: none; user-select: none; }
+    body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
+    #gameContainer { position: relative; width: 100%; max-width: 56.25vh; height: 100vh; max-height: 100vw; }
+    canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #87CEEB, #E0F7FA); }
+    #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(10, 15, 30, 0.92); color: white; text-align: center; padding: 20px; z-index: 10; transition: opacity 0.3s; }
+    #ui h1 { font-size: 2em; margin-bottom: 10px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); color: #FFD166; }
+    #ui h2 { font-size: 1.3em; margin: 15px 0 10px; color: #E0E0E0; }
+    .btn { padding: 14px 24px; font-size: 1em; border: none; border-radius: 10px; color: white; cursor: pointer; margin: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); font-weight: bold; min-width: 180px; }
+    .btn:active { transform: scale(0.96); }
+    .btn-mode { background: #0077B6; }
+    .btn-start { background: #2A9D8F; }
+    .btn-confirm { background: #E9C46A; color: #1A1A2E; }
+    .input-group { margin: 10px 0; width: 80%; max-width: 280px; }
+    .input-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #B0B0B0; }
+    .input-group input { width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #444; background: #222; color: white; font-size: 1em; text-align: center; }
+    .input-group input:focus { outline: none; border-color: #0077B6; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+      <!-- El contenido se genera dinámicamente con JS -->
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const ui = document.getElementById('ui');
+    const container = document.getElementById('gameContainer');
+
+    // 🧺 Imagen de la cesta
+    const cestaImg = new Image();
+    cestaImg.src = 'naia-cesta.png';
+    let cestaLoaded = false;
+    cestaImg.onload = () => { cestaLoaded = true; };
+    cestaImg.onerror = () => { cestaLoaded = false; };
+
+    // 🖼️ Imágenes de Naia para niveles (precargar)
+    const naiaImages = [];
+    const naiaImageNames = ['naia1.png', 'naia2.png', 'naia3.png', 'naia4.png', 'naia5.png', 'naia6.png', 'naia7.png', 'naia8.png'];
+    let currentNaiaImg = null;
+    
+    naiaImageNames.forEach((name, index) => {
+      const img = new Image();
+      img.src = name;
+      naiaImages[index] = img;
+    });
+
+    // 🎵 SISTEMA DE SONIDO Y MÚSICA
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    function playSound(type) {
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      switch(type) {
+        case 'catch':
+          osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(900, now + 0.1);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+          osc.start(now); osc.stop(now + 0.1);
+          break;
+        case 'levelup':
+          [400, 600, 800].forEach((f, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.type = 'square'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.1, now + i*0.12);
+            g.gain.exponentialRampToValueAtTime(0.01, now + i*0.12 + 0.15);
+            o.start(now + i*0.12); o.stop(now + i*0.12 + 0.15);
+          });
+          break;
+        case 'gameover':
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now);
+          osc.frequency.linearRampToValueAtTime(100, now + 0.5);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+          osc.start(now); osc.stop(now + 0.5);
+          break;
+        case 'click':
+          osc.type = 'sine'; osc.frequency.value = 800;
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+          osc.start(now); osc.stop(now + 0.05);
+          break;
+      }
+    }
+
+    // 🎵 MÚSICA DE FONDO
+    const bgMusic = new Audio('naia.ogg');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.3;
+
+    // 🎮 ESTADO DEL JUEGO
+    let gameMode = '1p';
+    let p1Name = 'Jugador 1', p2Name = 'Jugador 2';
+    let basket1X, basket2X;
+    
+    const basketW = 95;
+    const basketH = 105;
+    const basketOffX = 0;
+    const basketOffY = -80;
+    
+    let score1 = 0, score2 = 0, sharedScore = 0;
+    let lives1 = 5, lives2 = 5, sharedLives = 7;
+    let gameOver = false, started = false;
+    let emojis = [], frameCount = 0, keys = {};
+    let level = 1, collectedInLevel = 0, targetPerLevel = 15;
+    let gameState = 'menu';
+    let fallSpeed = 1.2, spawnInterval = 90;
+    let confirmBtnRect = null;
+
+    // ✅ ARRAY 100% LIMPIO - CERO HUECOS VACÍOS
+    const yellowEmojis = [
+      '😀','😁','😂','😊','😇','🙂','🙃','😉','😌','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪',
+      '🤓','','🤩','','😏','😒','😞','😔','😟','😕','','☹️','','😖','😫','😩','🥺','',
+      '😭','😤','😠','😡','🤬','🤯','','🥵','','😱','😨','😰','😥','😓','','🤔','','🤫',
+      '🤥','','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','','🤤','','😵','🤐','🥴',
+      '🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','','👺','','👻','','☠️','',
+      '','🤖','','😸','😹','😻','😼','😽','🙀','','😾'
+    ];
+
+    function resize() {
+      const ratio = 9/16;
+      const winRatio = window.innerWidth / window.innerHeight;
+      if (winRatio < ratio) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerWidth / ratio;
+      } else {
+        canvas.height = window.innerHeight;
+        canvas.width = window.innerHeight * ratio;
+      }
+      container.style.width = canvas.width + 'px';
+      container.style.height = canvas.height + 'px';
+      basket1X = canvas.width * 0.25;
+      basket2X = canvas.width * 0.75;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function showMenu() {
+      gameState = 'menu';
+      started = false;
+      ui.classList.remove('hidden');
+      ui.innerHTML = `
+        <h1>ATRAPA EMOJIS<br>CON NAIA</h1>
+        <h2>Selecciona Modo</h2>
+        <button class="btn btn-mode" onclick="showNameInput('1p')">👤 1 Jugador</button>
+        <button class="btn btn-mode" onclick="showNameInput('2p-coop')">🤝 2 Jugadores Cooperativo</button>
+        <button class="btn btn-mode" onclick="showNameInput('2p-vs')">⚔️ 2 Jugadores Competitivo</button>
+      `;
+    }
+
+    window.showNameInput = function(mode) {
+      playSound('click');
+      gameMode = mode;
+      gameState = 'nameInput';
+      const is2p = mode.includes('2p');
+      ui.innerHTML = `
+        <h1>👥 Nombres</h1>
+        <div class="input-group">
+          <label>Nombre Jugador 1</label>
+          <input type="text" id="name1" value="${p1Name}" maxlength="10">
+        </div>
+        ${is2p ? `<div class="input-group"><label>Nombre Jugador 2</label><input type="text" id="name2" value="${p2Name}" maxlength="10"></div>` : ''}
+        <button class="btn btn-start" id="startGameBtn">¡EMPEZAR!</button>
+        <p style="color:#FFD166; margin-top:12px; font-size:0.95em; font-weight:bold;">🎯 Atrapa 15 emojis para pasar de nivel</p>
+      `;
+      document.getElementById('startGameBtn').onclick = () => {
+        p1Name = document.getElementById('name1').value.trim() || 'Jugador 1';
+        if (is2p) p2Name = document.getElementById('name2').value.trim() || 'Jugador 2';
+        playSound('click');
+        startGame();
+      };
+    };
+
+    function startGame() {
+      score1 = score2 = sharedScore = 0;
+      level = 1; collectedInLevel = 0;
+      gameOver = false; started = true;
+      gameState = 'playing';
+      emojis = []; frameCount = 0; keys = {};
+      fallSpeed = 1.2; spawnInterval = 90;
+      
+      if (gameMode === '1p') { lives1 = sharedLives = 7; basket1X = canvas.width/2; }
+      else { lives1 = lives2 = 5; sharedLives = 7; basket1X = canvas.width*0.25; basket2X = canvas.width*0.75; }
+      
+      bgMusic.play().catch(e => console.log("Esperando interacción para audio"));
+      ui.classList.add('hidden');
+    }
+
+    function spawnEmoji() {
+      const emoji = yellowEmojis[Math.floor(Math.random() * yellowEmojis.length)];
+      let x, side;
+      if (gameMode === '1p') {
+        x = Math.random() * (canvas.width * 0.6) + canvas.width * 0.2;
+        side = 1;
+      } else {
+        side = Math.random() < 0.5 ? 1 : 2;
+        x = side === 1 ? Math.random() * (canvas.width * 0.35) + canvas.width * 0.075 : Math.random() * (canvas.width * 0.35) + canvas.width * 0.575;
+      }
+      emojis.push({ x, y: -30, r: 20, vy: fallSpeed + Math.random()*0.3, emoji, rot: 0, rotSpd: (Math.random()-0.5)*0.05, side });
+    }
+
+    function update() {
+      if (gameState !== 'playing') return;
+      frameCount++;
+      if (frameCount % spawnInterval === 0) spawnEmoji();
+
+      const spd = 6;
+      if (gameMode === '1p') {
+        if (keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
+        if (keys['ArrowRight']) basket1X = Math.min(canvas.width - basketW/2, basket1X + spd);
+      } else {
+        if (keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
+        if (keys['ArrowRight']) basket1X = Math.min(canvas.width*0.45, basket1X + spd);
+        if (keys['a'] || keys['A']) basket2X = Math.max(canvas.width*0.55, basket2X - spd);
+        if (keys['d'] || keys['D']) basket2X = Math.min(canvas.width - basketW/2, basket2X + spd);
+      }
+
+      const basketBaseY = canvas.height - 180;
+      const basketVisualTop = basketBaseY + basketOffY;
+      const basketCenterY = basketVisualTop + basketH / 2;
+      
+      const b1 = { l: basket1X - basketW/2 + basketOffX, r: basket1X + basketW/2 + basketOffX, center: basketCenterY };
+      const b2 = { l: basket2X - basketW/2 + basketOffX, r: basket2X + basketW/2 + basketOffX, center: basketCenterY };
+
+      for (let i = emojis.length - 1; i >= 0; i--) {
+        let e = emojis[i];
+        e.y += e.vy; e.rot += e.rotSpd;
+        let caught = false;
+
+        if (e.y >= b1.center - e.r && e.y <= b1.center + basketH/2) {
+          if (gameMode === '1p') {
+            if (e.x > b1.l && e.x < b1.r) { sharedScore++; caught = true; }
+          } else if (gameMode === '2p-coop') {
+            if ((e.x > b1.l && e.x < b1.r) || (e.x > b2.l && e.x < b2.r)) { sharedScore++; caught = true; }
+          } else {
+            if (e.side === 1 && e.x > b1.l && e.x < b1.r) { score1++; caught = true; }
+            else if (e.side === 2 && e.x > b2.l && e.x < b2.r) { score2++; caught = true; }
+          }
+        }
+
+        if (caught) {
+          playSound('catch');
+          collectedInLevel++;
+          emojis.splice(i, 1);
+          if (collectedInLevel >= targetPerLevel) {
+            gameState = 'levelConfirm';
+            const randomIndex = Math.floor(Math.random() * naiaImages.length);
+            currentNaiaImg = naiaImages[randomIndex];
+            playSound('levelup');
+          }
+          continue;
+        }
+
+        if (e.y - e.r > basketVisualTop + basketH + 15) {
+          if (gameMode === '1p' || gameMode === '2p-coop') {
+            sharedLives--;
+            if (sharedLives <= 0) { gameState = 'gameOver'; playSound('gameover'); }
+          } else {
+            if (e.side === 1) lives1--; else lives2--;
+            if (lives1 <= 0 || lives2 <= 0) { gameState = 'gameOver'; playSound('gameover'); }
+          }
+          emojis.splice(i, 1);
+        }
+      }
+    }
+
+    function drawBasket(x, y) {
+      if (cestaLoaded) {
+        ctx.drawImage(cestaImg, x - basketW/2 + basketOffX, y + basketOffY, basketW, basketH);
+      } else {
+        ctx.fillStyle = '#D4A373';
+        ctx.fillRect(x - basketW/2, y - basketH/2, basketW, basketH);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const grad = ctx.createLinearGradient(0,0,0,canvas.height);
+      grad.addColorStop(0, '#87CEEB'); grad.addColorStop(1, '#E0F7FA');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      if (gameMode !== '1p' && gameState !== 'gameOver') {
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 3; ctx.setLineDash([8,6]);
+        ctx.beginPath(); ctx.moveTo(canvas.width/2, 0); ctx.lineTo(canvas.width/2, canvas.height-180); ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      const bY = canvas.height - 180;
+      if (gameMode === '1p') drawBasket(basket1X, bY);
+      else { drawBasket(basket1X, bY); drawBasket(basket2X, bY); }
+
+      ctx.font = '34px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (let e of emojis) { 
+        ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.rot); ctx.fillText(e.emoji, 0, 0); ctx.restore(); 
+      }
+
+      if (gameState !== 'gameOver') {
+        ctx.fillStyle = '#1D3557'; ctx.font = 'bold 16px Arial';
+        if (gameMode === '1p') {
+          ctx.fillText(`👤 ${p1Name}: ${sharedScore}`, canvas.width/2, 25);
+          ctx.fillText('❤️'.repeat(sharedLives), canvas.width/2, 48);
+        } else if (gameMode === '2p-coop') {
+          ctx.fillText(`🤝 Equipo: ${sharedScore}`, canvas.width/2, 25);
+          ctx.fillText('❤️'.repeat(sharedLives), canvas.width/2, 48);
+        } else {
+          ctx.textAlign = 'left'; ctx.fillText(`${p1Name}: ${score1}`, 10, 25); ctx.fillText('❤️'.repeat(lives1), 10, 45);
+          ctx.textAlign = 'right'; ctx.fillText(`${p2Name}: ${score2}`, canvas.width-10, 25); ctx.fillText('❤️'.repeat(lives2), canvas.width-10, 45);
+        }
+        ctx.textAlign = 'center'; ctx.fillStyle = '#E9C46A'; ctx.font = 'bold 20px Arial';
+        ctx.fillText(`Nivel ${level}`, canvas.width/2, 75);
+      }
+
+      if (gameState !== 'gameOver') {
+        const rem = Math.max(0, targetPerLevel - collectedInLevel);
+        const cY = canvas.height - 110;
+        const boxW = 80, boxH = 80;
+        
+        ctx.fillStyle = 'rgba(20, 30, 50, 0.6)';
+        if (gameMode === '1p' || gameMode === '2p-coop') {
+          ctx.fillRect(canvas.width/2 - boxW/2, cY, boxW, boxH);
+          ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 50px Arial';
+          ctx.fillText(rem, canvas.width/2, cY + boxH/2);
+        } else {
+          ctx.fillRect(canvas.width*0.25 - boxW/2, cY, boxW, boxH);
+          ctx.fillRect(canvas.width*0.75 - boxW/2, cY, boxW, boxH);
+          ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 45px Arial';
+          ctx.fillText(rem, canvas.width*0.25, cY + boxH/2);
+          ctx.fillText(rem, canvas.width*0.75, cY + boxH/2);
+        }
+      }
+
+      // 🖼️ PANTALLA DE NIVEL COMPLETADO - LAYOUT ESPACIADO
+      if (gameState === 'levelConfirm') {
+        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        
+        // 1. Título (arriba)
+        ctx.fillStyle = '#4CAF50'; ctx.font = 'bold 28px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('¡Nivel Completado! 🎉', canvas.width/2, canvas.height/2 - 100);
+        
+        // 2. Imagen de Naia (centro, 120x120)
+        const imgSize = 120;
+        const imgY = canvas.height/2 - 50;
+        if (currentNaiaImg && currentNaiaImg.complete && currentNaiaImg.naturalWidth > 0) {
+          ctx.drawImage(currentNaiaImg, canvas.width/2 - imgSize/2, imgY, imgSize, imgSize);
+        } else {
+          ctx.fillStyle = '#FFD166'; ctx.font = '80px Arial';
+          ctx.fillText('🎮', canvas.width/2, imgY + 60);
+        }
+        
+        // 3. Texto objetivo (debajo de la imagen, sin tapar)
+        ctx.fillStyle = '#E0E0E0'; ctx.font = '18px Arial';
+        ctx.fillText('🎯 Atrapa 15 emojis para pasar de nivel', canvas.width/2, imgY + imgSize + 40);
+        
+        // 4. Botón (abajo del todo)
+        const bw = 200, bh = 50;
+        const btnY = imgY + imgSize + 75;
+        confirmBtnRect = { x: canvas.width/2 - bw/2, y: btnY, w: bw, h: bh };
+        ctx.fillStyle = '#E9C46A'; 
+        ctx.beginPath(); ctx.roundRect(confirmBtnRect.x, confirmBtnRect.y, confirmBtnRect.w, confirmBtnRect.h, 12); ctx.fill();
+        ctx.fillStyle = '#1A1A2E'; ctx.font = 'bold 20px Arial';
+        ctx.fillText('▶ Siguiente Nivel', canvas.width/2, btnY + bh/2 + 2);
+      }
+
+      if (gameState === 'gameOver') {
+        ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = '#EF476F'; ctx.font = 'bold 34px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('¡Fin de la Partida!', canvas.width/2, canvas.height/2 - 50);
+        ctx.fillStyle = '#FFF'; ctx.font = '20px Arial';
+        if (gameMode === '1p') ctx.fillText(`Puntuación: ${sharedScore}`, canvas.width/2, canvas.height/2);
+        else if (gameMode === '2p-coop') ctx.fillText(`Equipo: ${sharedScore}`, canvas.width/2, canvas.height/2);
+        else {
+          const win = score1 > score2 ? `¡Gana ${p1Name}! 🏆` : score2 > score1 ? `¡Gana ${p2Name}! 🏆` : '¡Empate! 🤝';
+          ctx.fillText(win, canvas.width/2, canvas.height/2 - 10);
+          ctx.fillText(`${p1Name}: ${score1} | ${p2Name}: ${score2}`, canvas.width/2, canvas.height/2 + 25);
+        }
+        const rw = 180, rh = 45;
+        confirmBtnRect = { x: canvas.width/2 - rw/2, y: canvas.height/2 + 60, w: rw, h: rh };
+        ctx.fillStyle = '#2A9D8F'; ctx.beginPath(); ctx.roundRect(confirmBtnRect.x, confirmBtnRect.y, confirmBtnRect.w, confirmBtnRect.h, 10); ctx.fill();
+        ctx.fillStyle = '#FFF'; ctx.font = 'bold 18px Arial';
+        ctx.fillText('Volver al Menú', canvas.width/2, confirmBtnRect.y + rh/2 + 2);
+      }
+    }
+
+    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keyup', e => keys[e.key] = false);
+
+    function handleInput(e) {
+      e.preventDefault();
+      if (gameState === 'levelConfirm' || gameState === 'gameOver') {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let cx, cy;
+        if (e.type.includes('touch')) {
+          cx = (e.touches[0].clientX - rect.left) * scaleX;
+          cy = (e.touches[0].clientY - rect.top) * scaleY;
+        } else {
+          cx = (e.clientX - rect.left) * scaleX;
+          cy = (e.clientY - rect.top) * scaleY;
+        }
+        
+        if (confirmBtnRect && cx >= confirmBtnRect.x && cx <= confirmBtnRect.x + confirmBtnRect.w && cy >= confirmBtnRect.y && cy <= confirmBtnRect.y + confirmBtnRect.h) {
+          playSound('click');
+          if (gameState === 'levelConfirm') {
+            nextLevel();
+          } else {
+            showMenu();
+          }
+        }
+        return;
+      }
+
+      if (gameState === 'playing') {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        for (let t of e.touches) {
+          const x = (t.clientX - rect.left) * scaleX;
+          if (gameMode === '1p') basket1X = Math.max(basketW/2, Math.min(canvas.width - basketW/2, x));
+          else {
+            if (x < canvas.width/2) basket1X = Math.max(basketW/2, Math.min(canvas.width*0.45, x));
+            else basket2X = Math.max(canvas.width*0.55, Math.min(canvas.width - basketW/2, x));
+          }
+        }
+      }
+    }
+
+    canvas.addEventListener('touchstart', handleInput, { passive: false });
+    canvas.addEventListener('touchmove', handleInput, { passive: false });
+    canvas.addEventListener('mousedown', handleInput);
+
+    function nextLevel() {
+      playSound('level');
+      level++;
+      collectedInLevel = 0;
+      fallSpeed = 1.2 + (level - 1) * 0.035; 
+      spawnInterval = Math.max(50, 90 - (level - 1) * 1.5);
+      emojis = []; 
+      gameState = 'playing';
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    showMenu();
+    gameLoop();
+  </script>
+</body>
+</html>

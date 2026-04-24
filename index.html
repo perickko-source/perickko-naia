@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ATRAPA EMOJIS CON NAIA</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; -webkit-user-select: none; user-select: none; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
     html, body {
       width: 100%; height: 100%;
       overflow: hidden;
@@ -20,7 +20,7 @@
       overflow: hidden;
       box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
-    #gameCanvas { display: block; width: 100%; height: 100%; }
+    #gameCanvas { display: block; width: 100%; height: 100%; touch-action: none; }
     #ui {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -29,13 +29,23 @@
     }
     #ui h1 { font-size: 2em; margin-bottom: 10px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); color: #FFD166; }
     #ui h2 { font-size: 1.3em; margin: 15px 0 10px; color: #E0E0E0; }
-    .btn { padding: 14px 24px; font-size: 1em; border: none; border-radius: 10px; color: white; cursor: pointer; margin: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); font-weight: bold; min-width: 180px; }
+    .btn {
+      padding: 14px 24px; font-size: 1em; border: none; border-radius: 10px;
+      color: white; cursor: pointer; margin: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      font-weight: bold; min-width: 180px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
     .btn:active { transform: scale(0.96); }
     .btn-mode { background: #0077B6; }
     .btn-start { background: #2A9D8F; }
     .input-group { margin: 10px 0; width: 80%; max-width: 280px; }
     .input-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #B0B0B0; }
-    .input-group input { width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #444; background: #222; color: white; font-size: 1em; text-align: center; }
+    .input-group input {
+      width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #444;
+      background: #222; color: white; font-size: 1em; text-align: center;
+      touch-action: manipulation;
+    }
     .input-group input:focus { outline: none; border-color: #0077B6; }
     .hidden { display: none !important; }
   </style>
@@ -54,22 +64,17 @@
     const ui = document.getElementById('ui');
     const wrapper = document.getElementById('gameWrapper');
 
-    // 🧺 Imagen de la cesta
     const cestaImg = new Image();
     cestaImg.src = 'naia-cesta.png';
     let cestaLoaded = false;
     cestaImg.onload = () => { cestaLoaded = true; };
     cestaImg.onerror = () => { cestaLoaded = false; };
 
-    // 🖼️ Imágenes de Naia para niveles
     const naiaImages = [];
     const naiaImageNames = ['naia1.png', 'naia2.png', 'naia3.png', 'naia4.png', 'naia5.png', 'naia6.png', 'naia7.png', 'naia8.png'];
     let currentNaiaImg = null;
-    naiaImageNames.forEach((name, index) => {
-      const img = new Image(); img.src = name; naiaImages[index] = img;
-    });
+    naiaImageNames.forEach((name, index) => { const img = new Image(); img.src = name; naiaImages[index] = img; });
 
-    // 🎵 SONIDO Y MÚSICA
     let audioCtx;
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
     function playSound(type) {
@@ -103,7 +108,6 @@
     }
     const bgMusic = new Audio('naia.ogg'); bgMusic.loop = true; bgMusic.volume = 0.3;
 
-    // 🎮 ESTADO
     let gameMode = '1p', p1Name = 'Jugador 1', p2Name = 'Jugador 2';
     let basket1X, basket2X;
     const basketW = 95, basketH = 105, basketOffX = 0, basketOffY = -80;
@@ -116,20 +120,18 @@
 
     const yellowEmojis = [
       '😀','😁','😂','😊','😇','🙂','🙃','😉','😌','','😘','','😙','😚','😋','😛','😝','😜','🤪',
-      '🤓','','🤩','','😏','😒','😞','😔','😟','😕','','☹️','','😖','😫','😩','🥺','',
+      '🤓','','','','😏','😒','😞','😔','😟','😕','','☹️','','😖','😫','😩','🥺','',
       '😭','😤','😠','😡','🤬','🤯','','🥵','','😱','😨','😰','😥','😓','','🤔','','🤫',
-      '🤥','','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','','','','😵','','🥴',
-      '🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','','👺','','👻','','☠️','',
+      '🤥','','😑','😬','','😯','😦','😧','😮','😲','','','','','😵','','🥴',
+      '🤢','','🤧','','🤒','','🤑','','😈','','','👺','','','','☠️','',
       '','🤖','','😸','😹','😻','😼','😽','🙀','','😾'
     ];
 
-    // 📱 RESIZE ROBUSTO PARA MÓVIL
     function resize() {
       const ratio = 9/16;
       const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
       const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
       const winRatio = vw / vh;
-      
       if (winRatio < ratio) {
         wrapper.style.width = vw + 'px';
         wrapper.style.height = (vw / ratio) + 'px';
@@ -146,7 +148,6 @@
     window.addEventListener('resize', resize);
     if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 
-    // 🖥️ UI
     function showMenu() {
       gameState = 'menu'; started = false;
       ui.classList.remove('hidden');
@@ -183,7 +184,6 @@
       bgMusic.play().catch(()=>{}); ui.classList.add('hidden');
     }
 
-    // 🎮 LÓGICA
     function spawnEmoji() {
       const emoji = yellowEmojis[Math.floor(Math.random() * yellowEmojis.length)];
       let x, side;
@@ -309,9 +309,9 @@
         }
       }
     }
-    wrapper.addEventListener('touchstart', handleInput, {passive:false});
-    wrapper.addEventListener('touchmove', handleInput, {passive:false});
-    wrapper.addEventListener('mousedown', handleInput);
+    canvas.addEventListener('touchstart', handleInput, {passive:false});
+    canvas.addEventListener('touchmove', handleInput, {passive:false});
+    canvas.addEventListener('mousedown', handleInput);
     function nextLevel() {
       playSound('level'); level++; collectedInLevel=0;
       fallSpeed=1.2+(level-1)*0.035; spawnInterval=Math.max(50,90-(level-1)*1.5);

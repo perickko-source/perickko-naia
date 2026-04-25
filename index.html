@@ -54,6 +54,17 @@
     let alexLoaded = false;
     alexImg.onload = () => alexLoaded = true;
 
+    // 🎨 SPRITE SHEET DE EMOJIS
+    const spriteImg = new Image(); spriteImg.src = 'emojis-sprite.png';
+    let spriteLoaded = false;
+    const TOTAL_EMOJIS = 20;
+    let emojiW = 0, emojiH = 0;
+    spriteImg.onload = () => {
+      spriteLoaded = true;
+      emojiW = spriteImg.width / TOTAL_EMOJIS;
+      emojiH = spriteImg.height;
+    };
+
     const naiaImages = [];
     ['naia1.png','naia2.png','naia3.png','naia4.png','naia5.png','naia6.png','naia7.png','naia8.png'].forEach((n,i) => { const im = new Image(); im.src = n; naiaImages[i] = im; });
     let currentNaiaImg = null;
@@ -87,14 +98,10 @@
     let score1 = 0, score2 = 0, sharedScore = 0;
     let lives1 = 5, lives2 = 5, sharedLives = 7;
     let gameOver = false, started = false;
-    let emojis = [], frameCount = 0, keys = {};
+    let emojis = [], particles = [], floatingTexts = [], frameCount = 0, keys = {};
     let level = 1, collectedInLevel = 0, targetPerLevel = 15;
     let gameState = 'menu', fallSpeed = 1.2, spawnInterval = 90, confirmBtnRect = null;
-
-    // 🛡️ LISTA ACTUALIZADA PARA PRUEBA + BLINDAJE
-    const yellowEmojis = [
-      '😂','😁','😱','😊','😭','😳','😄','😘','☺️','😍','😔','😆','😒','😜','😉','😢','😋','😃','😝','😏'
-    ].filter(e => e && e.trim().length > 0);
+    let shakeIntensity = 0;
 
     function resize() {
       const ratio = 9/16;
@@ -109,9 +116,7 @@
     if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 
     function showMenu() {
-      // 🎵 RESET VELOCIDAD MÚSICA AL VOLVER AL MENÚ
       bgMusic.playbackRate = 1.0;
-      
       gameState = 'menu'; started = false;
       ui.classList.remove('hidden');
       ui.innerHTML = `
@@ -164,10 +169,9 @@
       const diff = difficulties[selectedDifficulty];
       score1 = score2 = sharedScore = 0; level = 1; collectedInLevel = 0;
       gameOver = false; started = true; gameState = 'playing';
-      emojis = []; frameCount = 0; keys = {};
-      fallSpeed = diff.fallSpeed; spawnInterval = diff.spawnInterval;
+      emojis = []; particles = []; floatingTexts = []; frameCount = 0; keys = {};
+      fallSpeed = diff.fallSpeed; spawnInterval = diff.spawnInterval; shakeIntensity = 0;
       
-      // 🎵 VELOCIDAD MÚSICA SEGÚN DIFICULTAD
       bgMusic.playbackRate = diff.musicRate || 1.0;
       
       if(gameMode === '1p') { sharedLives = diff.lives1p; basket1X = canvas.width/2; }
@@ -176,12 +180,44 @@
       bgMusic.play().catch(()=>{}); ui.classList.add('hidden');
     }
 
+    // 🎯 SPAWN CON SPRITE INDEX (0-19)
     function spawnEmoji() {
-      let emoji = yellowEmojis[Math.floor(Math.random() * yellowEmojis.length)];
+      const emojiIdx = Math.floor(Math.random() * TOTAL_EMOJIS);
       let x, side;
       if(gameMode === '1p') { x = Math.random()*(canvas.width*0.6)+canvas.width*0.2; side = 1; }
       else { side = Math.random()<0.5?1:2; x = side===1 ? Math.random()*(canvas.width*0.35)+canvas.width*0.075 : Math.random()*(canvas.width*0.35)+canvas.width*0.575; }
-      emojis.push({x, y:-30, r:20, vy:fallSpeed+Math.random()*0.3, emoji, rot:0, rotSpd:(Math.random()-0.5)*0.05, side});
+      emojis.push({x, y:-30, r:20, vy:fallSpeed+Math.random()*0.3, emojiIdx, rot:0, rotSpd:(Math.random()-0.5)*0.05, side});
+    }
+
+    // 🎨 SISTEMA DE EFECTOS VISUALES
+    function spawnParticles(x, y, count, color) {
+      for(let i=0; i<count; i++) {
+        particles.push({
+          x: x, y: y,
+          vx: (Math.random()-0.5)*4,
+          vy: (Math.random()-0.5)*4 - 2,
+          life: 1.0,
+          color: color,
+          size: Math.random()*4 + 2
+        });
+      }
+    }
+
+    function spawnFloatingText(x, y, text, color) {
+      floatingTexts.push({
+        x: x, y: y,
+        vy: -1.5,
+        text: text,
+        color: color,
+        life: 1.0,
+        scale: 1.0
+      });
+    }
+
+    function triggerLifeLoss() {
+      const flash = document.createElement('div'); flash.className = 'life-loss-effect';
+      wrapper.appendChild(flash); setTimeout(() => flash.remove(), 300);
+      shakeIntensity = 15;
     }
 
     function update() {
@@ -189,6 +225,11 @@
       frameCount++;
       if(frameCount % spawnInterval === 0) spawnEmoji();
       
+      if(shakeIntensity > 0) {
+        shakeIntensity *= 0.9;
+        if(shakeIntensity < 0.5) shakeIntensity = 0;
+      }
+
       const spd = 6;
       if(gameMode === '1p') {
         if(keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
@@ -200,7 +241,6 @@
         if(keys['d']||keys['D']) basket2X = Math.min(canvas.width - basketW/2, basket2X + spd);
       }
       
-      // 🎯 COLISIÓN AJUSTADA (+26px offset vertical)
       const basketBaseY = canvas.height - 180;
       const basketVisualTop = basketBaseY + basketOffY;
       const basketCenterY = basketVisualTop + basketH / 2 + 26;
@@ -220,7 +260,12 @@
           }
         }
         if(caught) {
-          playSound('catch'); collectedInLevel++; emojis.splice(i,1);
+          playSound('catch'); 
+          collectedInLevel++; 
+          emojis.splice(i,1);
+          spawnParticles(e.x, e.y, 8, '#FFD166');
+          spawnFloatingText(e.x, e.y - 20, "+1", "#FFFFFF");
+          
           if(collectedInLevel >= targetPerLevel) { gameState='levelConfirm'; currentNaiaImg=naiaImages[Math.floor(Math.random()*naiaImages.length)]; playSound('levelup'); }
           continue;
         }
@@ -231,20 +276,33 @@
           emojis.splice(i,1);
         }
       }
+
+      for(let i=particles.length-1; i>=0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life -= 0.03;
+        if(p.life <= 0) particles.splice(i,1);
+      }
+
+      for(let i=floatingTexts.length-1; i>=0; i--) {
+        let t = floatingTexts[i];
+        t.y += t.vy; t.life -= 0.02; t.scale += 0.01;
+        if(t.life <= 0) floatingTexts.splice(i,1);
+      }
     }
 
-    function triggerLifeLoss() {
-      const flash = document.createElement('div'); flash.className = 'life-loss-effect';
-      wrapper.appendChild(flash); setTimeout(() => flash.remove(), 300);
-    }
-
-    // 🎨 DIBUJADO CON SOPORTE PARA SEGUNDA IMAGEN
     function drawBasket(x, y, imgRef) {
       if(imgRef && imgRef.complete) ctx.drawImage(imgRef, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH);
       else { ctx.fillStyle='#D4A373'; ctx.fillRect(x-basketW/2, y-basketH/2, basketW, basketH); }
     }
 
     function draw() {
+      ctx.save();
+      if(shakeIntensity > 0) {
+        const dx = (Math.random()-0.5) * shakeIntensity;
+        const dy = (Math.random()-0.5) * shakeIntensity;
+        ctx.translate(dx, dy);
+      }
+
       ctx.clearRect(0,0,canvas.width,canvas.height);
       const g = ctx.createLinearGradient(0,0,0,canvas.height); g.addColorStop(0,'#87CEEB'); g.addColorStop(1,'#E0F7FA');
       ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -254,15 +312,49 @@
         ctx.beginPath(); ctx.moveTo(canvas.width/2,0); ctx.lineTo(canvas.width/2,canvas.height-180); ctx.stroke(); ctx.setLineDash([]);
       }
       const bY = canvas.height-180;
-      // ✅ NAIA (J1) Y ALEX (J2)
       if(gameMode==='1p') drawBasket(basket1X, bY, cestaImg);
       else {
         drawBasket(basket1X, bY, cestaImg);
         drawBasket(basket2X, bY, alexImg);
       }
       
-      ctx.font='34px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      for(let e of emojis) { ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); ctx.fillText(e.emoji,0,0); ctx.restore(); }
+      // 🎨 DIBUJAR EMOJIS DESDE SPRITE SHEET (Escala ajustada al 50%)
+      if(spriteLoaded && emojiW > 0) {
+        const scale = 0.50; // 📏 Ajuste: 50% del tamaño original
+        const dw = emojiW * scale;
+        const dh = emojiH * scale;
+        
+        for(let e of emojis) { 
+          ctx.save(); 
+          ctx.translate(e.x,e.y); 
+          ctx.rotate(e.rot); 
+          // Recortar frame original, dibujar escalado al 50%
+          ctx.drawImage(spriteImg, e.emojiIdx * emojiW, 0, emojiW, emojiH, -dw/2, -dh/2, dw, dh);
+          ctx.restore(); 
+        }
+      }
+      
+      for(let p of particles) {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1.0;
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for(let t of floatingTexts) {
+        ctx.globalAlpha = t.life;
+        ctx.fillStyle = t.color;
+        ctx.font = `bold ${24 * t.scale}px Arial`;
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(t.text, t.x, t.y);
+        ctx.fillText(t.text, t.x, t.y);
+      }
+      ctx.globalAlpha = 1.0;
       
       if(gameState!=='gameOver') {
         ctx.fillStyle='#1D3557'; ctx.font='bold 16px Arial';
@@ -308,6 +400,8 @@
         ctx.fillStyle='#2A9D8F'; ctx.beginPath(); ctx.roundRect(confirmBtnRect.x,confirmBtnRect.y,confirmBtnRect.w,confirmBtnRect.h,10); ctx.fill();
         ctx.fillStyle='#FFF'; ctx.font='bold 18px Arial'; ctx.fillText('Volver al Menú',canvas.width/2,confirmBtnRect.y+rh/2+2);
       }
+
+      ctx.restore();
     }
 
     window.addEventListener('keydown', e=>keys[e.key]=true);

@@ -91,13 +91,9 @@
     let level = 1, collectedInLevel = 0, targetPerLevel = 15;
     let gameState = 'menu', fallSpeed = 1.2, spawnInterval = 90, confirmBtnRect = null;
 
-    // 🛡️ LISTA EXACTA SOLICITADA + BLINDAJE
+    // 🛡️ LISTA ACTUALIZADA PARA PRUEBA + BLINDAJE
     const yellowEmojis = [
-      '🥰','','😘','😀','','😊','😗','','🤗','','😫','😌','😝','😓',
-      '🤑','😟','😭','😨','😬','😱','😳','🤒','','🥹','','🫢','','🤫',
-      '🥺','','😷','😠','🥴','🤪','😵','😩','🤯','','😤','😢','😞','😖',
-      '😲','️','🙃','','😒','🤤','😛','😜','😴','','😯','😪','😮','😥',
-      '🙄','','😶','😐','🤔','🤩'
+      '😂','😁','😱','😊','😭','😳','😄','😘','☺️','😍','😔','😆','😒','😜','😉','😢','😋','😃','😝','😏'
     ].filter(e => e && e.trim().length > 0);
 
     function resize() {
@@ -113,7 +109,7 @@
     if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 
     function showMenu() {
-      // 🎵 RESET VELOCIDAD MÚSICA AL VOLVER AL MENÚ O GAME OVER
+      // 🎵 RESET VELOCIDAD MÚSICA AL VOLVER AL MENÚ
       bgMusic.playbackRate = 1.0;
       
       gameState = 'menu'; started = false;
@@ -219,7 +215,6 @@
         if(e.y >= b1.c - e.r && e.y <= b1.c + basketH/2) {
           if(gameMode==='1p' && e.x>b1.l && e.x<b1.r) { sharedScore++; caught=true; }
           else if(gameMode==='2p-coop' && ((e.x>b1.l&&e.x<b1.r)||(e.x>b2.l&&e.x<b2.r))) { sharedScore++; caught=true; }
-          // ✅ CORREGIDO: e.x < b1.r
           else if(gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x<b1.r)||(e.side===2&&e.x>b2.l&&e.x<b2.r))) {
             if(e.side===1) score1++; else score2++; caught=true;
           }

@@ -65,7 +65,6 @@
     }
     const bgMusic = new Audio('naia.ogg'); bgMusic.loop = true; bgMusic.volume = 0.3;
 
-    // 🎚️ SISTEMA DE DIFICULTADES
     let selectedDifficulty = 'easy';
     const difficulties = {
       easy:       { fallSpeed: 1.2, spawnInterval: 90, lives1p: 7, lives2p: 5, speedInc: 0.035, spawnDec: 1.5, label: '🟢 Fácil' },
@@ -85,14 +84,14 @@
     let level = 1, collectedInLevel = 0, targetPerLevel = 15;
     let gameState = 'menu', fallSpeed = 1.2, spawnInterval = 90, confirmBtnRect = null;
 
+    // 🛡️ ARRAY DEFINITIVO + BLINDAJE AUTOMÁTICO
     const yellowEmojis = [
-      '😀','😁','😂','😊','😇','🙂','🙃','😉','😌','','😘','😗','😙','😚','😋','😛','😝','😜','',
-      '🤓','','🤩','','','😒','😞','😔','😟','😕','🙁','️','😖','😫','😩','','😭',
-      '😤','😠','😡','🤬','','','','😱','😨','😰','😥','😓','','🤔','','🤥','',
-      '😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','🤤','😵','🤐','','🤢','','🤧',
-      '😷','🤒','','🤑','','😈','','👺','','☠️','','👾','','😺','😸','😹','😻',
-      '😼','😽','🙀',''
-    ];
+      '🥰','😍','😘','🤣','😀','😅','😊','😗','😚','🤗','🫡','😑','😣','🤐','😫','😌','😝','😓','🫤',
+      '🤑','🙁','😟','😭','😨','😬','😱','😬','😱','😳','😵‍💫','🤒','🤮','🥳','🥹','🤥','🙂‍↕️','🫢',
+      '🤓','🫣','🧐','🤫','🤭','🫨','🙂‍↔️','🥺','😇','🤧','🤕','😷','😠','🥴','🤪','😵','😮‍💨','😩',
+      '🤯','😧','😦','😤','😢','😞','😖','😲','☹️','🫠','🙃','😔','😕','😒','🤤','😛','😜','😴',
+      '🥱','😯','😪','😮','😥','🙄','😏','🫥','😶','🤨','😐','🤔','🤩'
+    ].filter(e => e && e.trim().length > 0); // 🔒 BLINDAJE: Elimina huecos vacíos automáticamente
 
     function resize() {
       const ratio = 9/16;
@@ -106,7 +105,6 @@
     window.addEventListener('resize', resize);
     if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 
-    // 🖥️ UI & MENÚS
     function showMenu() {
       gameState = 'menu'; started = false;
       ui.classList.remove('hidden');
@@ -169,10 +167,8 @@
       bgMusic.play().catch(()=>{}); ui.classList.add('hidden');
     }
 
-    // 🎮 LÓGICA
     function spawnEmoji() {
-      let emoji = '';
-      while(!emoji || emoji.trim() === '') emoji = yellowEmojis[Math.floor(Math.random() * yellowEmojis.length)];
+      let emoji = yellowEmojis[Math.floor(Math.random() * yellowEmojis.length)];
       let x, side;
       if(gameMode === '1p') { x = Math.random()*(canvas.width*0.6)+canvas.width*0.2; side = 1; }
       else { side = Math.random()<0.5?1:2; x = side===1 ? Math.random()*(canvas.width*0.35)+canvas.width*0.075 : Math.random()*(canvas.width*0.35)+canvas.width*0.575; }
@@ -195,13 +191,17 @@
         if(keys['d']||keys['D']) basket2X = Math.min(canvas.width - basketW/2, basket2X + spd);
       }
       
-      const bBase = canvas.height - 180, bTop = bBase + basketOffY, bCenter = bTop + basketH/2;
-      const b1 = {l: basket1X-basketW/2+basketOffX, r: basket1X+basketW/2+basketOffX, c: bCenter};
-      const b2 = {l: basket2X-basketW/2+basketOffX, r: basket2X+basketW/2+basketOffX, c: bCenter};
+      // 🎯 COLISIÓN AJUSTADA (+26px offset vertical)
+      const basketBaseY = canvas.height - 180;
+      const basketVisualTop = basketBaseY + basketOffY;
+      const basketCenterY = basketVisualTop + basketH / 2 + 26; // ✅ Offset aplicado
+      
+      const b1 = { l: basket1X - basketW/2 + basketOffX, r: basket1X + basketW/2 + basketOffX, c: basketCenterY };
+      const b2 = { l: basket2X - basketW/2 + basketOffX, r: basket2X + basketW/2 + basketOffX, c: basketCenterY };
 
+      // 🔄 EMOJIS
       for(let i=emojis.length-1; i>=0; i--) {
         let e = emojis[i]; e.y += e.vy; e.rot += e.rotSpd;
-        if(!e.emoji || e.emoji.trim()==='') { emojis.splice(i,1); continue; }
         
         let caught = false;
         if(e.y >= b1.c - e.r && e.y <= b1.c + basketH/2) {
@@ -216,7 +216,7 @@
           if(collectedInLevel >= targetPerLevel) { gameState='levelConfirm'; currentNaiaImg=naiaImages[Math.floor(Math.random()*naiaImages.length)]; playSound('levelup'); }
           continue;
         }
-        if(e.y - e.r > bTop + basketH + 15) {
+        if(e.y - e.r > basketVisualTop + basketH + 15) {
           triggerLifeLoss();
           if(gameMode==='1p'||gameMode==='2p-coop') { sharedLives--; if(sharedLives<=0){gameState='gameOver';playSound('gameover');} }
           else { if(e.side===1)lives1--; else lives2--; if(lives1<=0||lives2<=0){gameState='gameOver';playSound('gameover');} }
@@ -273,12 +273,9 @@
       if(gameState==='levelConfirm') {
         ctx.fillStyle='rgba(0,0,0,0.75)'; ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle='#4CAF50'; ctx.font='bold 28px Arial'; ctx.textAlign='center'; ctx.fillText('¡Nivel Completado! 🎉',canvas.width/2,canvas.height/2-90);
-        
-        // 🖼️ IMAGEN 108x120
         const imgW=108, imgH=120, imgY=canvas.height/2-40;
         if(currentNaiaImg && currentNaiaImg.complete && currentNaiaImg.naturalWidth>0) ctx.drawImage(currentNaiaImg,canvas.width/2-imgW/2,imgY,imgW,imgH);
         else { ctx.fillStyle='#FFD166'; ctx.font='60px Arial'; ctx.fillText('🎮',canvas.width/2,imgY+50); }
-        
         ctx.fillStyle='#E0E0E0'; ctx.font='18px Arial'; ctx.fillText('🎯 Atrapa 15 emojis para pasar de nivel',canvas.width/2,imgY+imgH+35);
         const bw=200, bh=50, btnY=imgY+imgH+70;
         confirmBtnRect={x:canvas.width/2-bw/2, y:btnY, w:bw, h:bh};
@@ -331,7 +328,8 @@
       const diff = difficulties[selectedDifficulty];
       fallSpeed += diff.speedInc;
       spawnInterval = Math.max(40, spawnInterval - diff.spawnDec);
-      emojis=[]; gameState='playing';
+      emojis=[]; 
+      gameState='playing';
     }
 
     function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }

@@ -54,6 +54,9 @@
     let alexLoaded = false;
     alexImg.onload = () => alexLoaded = true;
 
+    // 🖼️ PORTADA (PANTALLA DE INICIO)
+    const portadaImg = new Image(); portadaImg.src = 'portada.png';
+
     // 🎨 SPRITE SHEET DE EMOJIS
     const spriteImg = new Image(); spriteImg.src = 'emojis-sprite.png';
     let spriteLoaded = false;
@@ -81,6 +84,43 @@
       else if(t==='click'){ o.type='sine'; o.frequency.value=800; g.gain.setValueAtTime(0.1,now); g.gain.exponentialRampToValueAtTime(0.01,now+0.05); o.start(now); o.stop(now+0.05); }
     }
     const bgMusic = new Audio('naia.ogg'); bgMusic.loop = true; bgMusic.volume = 0.3;
+
+    // 🏆 SISTEMA DE RÉCORDS (localStorage)
+    const STORAGE_KEY = 'naia_emojis_highscores';
+    const MAX_RECORDS = 5;
+    function getRecords() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch(e) { return []; }
+    }
+    function saveRecords(records) { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+    function addRecord(name, score) {
+      const records = getRecords();
+      records.push({ name, score, date: new Date().toLocaleDateString() });
+      records.sort((a, b) => b.score - a.score);
+      const top = records.slice(0, MAX_RECORDS);
+      saveRecords(top);
+      return top;
+    }
+    function renderLeaderboard() {
+      const records = getRecords();
+      const container = document.getElementById('leaderboardSection');
+      if (!container) return;
+      let html = '<div style="width:90%; max-width:300px; margin:10px auto; background:rgba(255,255,255,0.05); border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,0.1);">';
+      html += '<h3 style="color:#FFD166; margin:0 0 10px 0; font-size:1.1em; text-align:center;">🏆 Top Récords</h3>';
+      if (records.length === 0) {
+        html += '<p style="text-align:center; color:#aaa; font-size:0.9em;">Aún no hay récords</p>';
+      } else {
+        records.forEach((r, i) => {
+          const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:${i<records.length-1?'1px solid rgba(255,255,255,0.1)':'none'}; font-size:0.95em;">
+            <span>${medal} ${r.name}</span>
+            <span style="color:#4CAF50; font-weight:bold; font-size:1.1em;">${r.score}</span>
+          </div>`;
+        });
+      }
+      html += '</div>';
+      container.innerHTML = html;
+    }
 
     let selectedDifficulty = 'easy';
     const difficulties = {
@@ -114,6 +154,63 @@
     resize();
     window.addEventListener('resize', resize);
     if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+
+    // 🖼️ LÓGICA DE PANTALLA DE CARGA (SPLASH SCREEN)
+    function showSplashScreen() {
+      const splash = document.createElement('div');
+      splash.id = 'splash-screen';
+      // Portada a toda pantalla con color de fondo por si la imagen tarda en cargar
+      splash.style.cssText = `
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: #1a1a2e url('portada.png') no-repeat center center;
+        background-size: cover;
+        display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+        padding-bottom: 12vh; z-index: 200; transition: opacity 1s ease;
+      `;
+      
+      const loaderText = document.createElement('div');
+      loaderText.innerText = 'CARGANDO...';
+      loaderText.style.cssText = `
+        color: #FFD166; font-family: sans-serif; font-weight: bold; font-size: 1.2em;
+        margin-bottom: 10px; text-shadow: 2px 2px 4px #000; letter-spacing: 2px;
+      `;
+
+      const barBg = document.createElement('div');
+      barBg.style.cssText = `
+        width: 80%; max-width: 300px; height: 8px; background: rgba(255,255,255,0.2);
+        border-radius: 4px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+      `;
+
+      const bar = document.createElement('div');
+      bar.style.cssText = `
+        width: 0%; height: 100%; background: #FFD166; border-radius: 4px;
+        transition: width 10s linear;
+      `;
+
+      barBg.appendChild(bar);
+      splash.appendChild(loaderText);
+      splash.appendChild(barBg);
+      
+      wrapper.appendChild(splash);
+
+      const startLoading = () => {
+        // Iniciar animación de la barra (10 segundos)
+        requestAnimationFrame(() => { bar.style.width = '100%'; });
+        
+        // Esperar 10 segundos antes de ir al menú
+        setTimeout(() => {
+          splash.style.opacity = '0'; // Fade out
+          setTimeout(() => {
+            splash.remove(); // Eliminar del DOM
+            showMenu(); // Mostrar menú principal
+          }, 1000);
+        }, 10000);
+      };
+
+      // Iniciar cuando la imagen esté lista (o inmediatamente si ya cargó)
+      if (portadaImg.complete) startLoading();
+      else portadaImg.onload = startLoading;
+    }
 
     function showMenu() {
       bgMusic.playbackRate = 1.0;
@@ -151,12 +248,16 @@
     window.showNameInput = function(mode) {
       playSound('click'); gameMode = mode; gameState = 'nameInput';
       const is2p = mode.includes('2p');
+      const instructionText = selectedDifficulty === 'extreme' 
+         ? "💀 ¡Modo Extremo! Sobrevive y atrapa sin parar" 
+         : "🎯 Atrapa 15 emojis para pasar de nivel";
+         
       ui.innerHTML = `
         <h1>👥 Nombres</h1>
         <div class="input-group"><label>Nombre Jugador 1</label><input type="text" id="name1" value="${p1Name}" maxlength="10"></div>
         ${is2p ? `<div class="input-group"><label>Nombre Jugador 2</label><input type="text" id="name2" value="${p2Name}" maxlength="10"></div>` : ''}
         <button class="btn btn-start" id="startGameBtn">¡EMPEZAR!</button>
-        <p style="color:#FFD166; margin-top:12px; font-size:0.95em; font-weight:bold;">🎯 Atrapa 15 emojis para pasar de nivel</p>
+        <p style="color:#FFD166; margin-top:12px; font-size:0.95em; font-weight:bold;">${instructionText}</p>
       `;
       document.getElementById('startGameBtn').onclick = () => {
         p1Name = document.getElementById('name1').value.trim() || 'Jugador 1';
@@ -180,38 +281,29 @@
       bgMusic.play().catch(()=>{}); ui.classList.add('hidden');
     }
 
-    // 🎯 SPAWN CON SPRITE INDEX (0-19)
     function spawnEmoji() {
       const emojiIdx = Math.floor(Math.random() * TOTAL_EMOJIS);
-      let x, side;
-      if(gameMode === '1p') { x = Math.random()*(canvas.width*0.6)+canvas.width*0.2; side = 1; }
-      else { side = Math.random()<0.5?1:2; x = side===1 ? Math.random()*(canvas.width*0.35)+canvas.width*0.075 : Math.random()*(canvas.width*0.35)+canvas.width*0.575; }
-      emojis.push({x, y:-30, r:20, vy:fallSpeed+Math.random()*0.3, emojiIdx, rot:0, rotSpd:(Math.random()-0.5)*0.05, side});
+      let x, vy, side;
+      if(selectedDifficulty === 'extreme') {
+        x = Math.random() * (canvas.width * 0.9) + (canvas.width * 0.05);
+        vy = fallSpeed + (Math.random() * 4);
+        if(Math.random() < 0.3) spawnEmoji();
+      } else {
+        if(gameMode === '1p') { x = Math.random()*(canvas.width*0.6)+canvas.width*0.2; side = 1; }
+        else { side = Math.random()<0.5?1:2; x = side===1 ? Math.random()*(canvas.width*0.35)+canvas.width*0.075 : Math.random()*(canvas.width*0.35)+canvas.width*0.575; }
+        vy = fallSpeed + Math.random()*0.3;
+      }
+      emojis.push({x, y:-30, r:20, vy, emojiIdx, rot:0, rotSpd:(Math.random()-0.5)*0.05, side: side||1});
     }
 
-    // 🎨 SISTEMA DE EFECTOS VISUALES
     function spawnParticles(x, y, count, color) {
       for(let i=0; i<count; i++) {
-        particles.push({
-          x: x, y: y,
-          vx: (Math.random()-0.5)*4,
-          vy: (Math.random()-0.5)*4 - 2,
-          life: 1.0,
-          color: color,
-          size: Math.random()*4 + 2
-        });
+        particles.push({ x, y, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4-2, life:1.0, color, size:Math.random()*4+2 });
       }
     }
 
     function spawnFloatingText(x, y, text, color) {
-      floatingTexts.push({
-        x: x, y: y,
-        vy: -1.5,
-        text: text,
-        color: color,
-        life: 1.0,
-        scale: 1.0
-      });
+      floatingTexts.push({ x, y, vy:-1.5, text, color, life:1.0, scale:1.0 });
     }
 
     function triggerLifeLoss() {
@@ -244,12 +336,13 @@
       const basketBaseY = canvas.height - 180;
       const basketVisualTop = basketBaseY + basketOffY;
       const basketCenterY = basketVisualTop + basketH / 2 + 26;
-      
       const b1 = { l: basket1X - basketW/2 + basketOffX, r: basket1X + basketW/2 + basketOffX, c: basketCenterY };
       const b2 = { l: basket2X - basketW/2 + basketOffX, r: basket2X + basketW/2 + basketOffX, c: basketCenterY };
 
       for(let i=emojis.length-1; i>=0; i--) {
-        let e = emojis[i]; e.y += e.vy; e.rot += e.rotSpd;
+        let e = emojis[i]; 
+        e.y += e.vy;
+        e.rot += e.rotSpd;
         
         let caught = false;
         if(e.y >= b1.c - e.r && e.y <= b1.c + basketH/2) {
@@ -266,13 +359,39 @@
           spawnParticles(e.x, e.y, 8, '#FFD166');
           spawnFloatingText(e.x, e.y - 20, "+1", "#FFFFFF");
           
-          if(collectedInLevel >= targetPerLevel) { gameState='levelConfirm'; currentNaiaImg=naiaImages[Math.floor(Math.random()*naiaImages.length)]; playSound('levelup'); }
+          if(collectedInLevel >= targetPerLevel) {
+            if(selectedDifficulty === 'extreme') {
+              level++; collectedInLevel = 0;
+              fallSpeed += 0.3;
+              spawnInterval = Math.max(10, spawnInterval - 1);
+              playSound('levelup');
+            } else {
+              gameState='levelConfirm'; 
+              currentNaiaImg=naiaImages[Math.floor(Math.random()*naiaImages.length)]; 
+              playSound('levelup');
+            }
+          }
           continue;
         }
         if(e.y - e.r > basketVisualTop + basketH + 15) {
           triggerLifeLoss();
-          if(gameMode==='1p'||gameMode==='2p-coop') { sharedLives--; if(sharedLives<=0){gameState='gameOver';playSound('gameover');} }
-          else { if(e.side===1)lives1--; else lives2--; if(lives1<=0||lives2<=0){gameState='gameOver';playSound('gameover');} }
+          if(gameMode==='1p'||gameMode==='2p-coop') { 
+            sharedLives--; 
+            if(sharedLives<=0){ 
+              gameState='gameOver'; 
+              playSound('gameover'); 
+              shakeIntensity = 0; 
+              showGameOverUI();
+            } 
+          } else { 
+            if(e.side===1) lives1--; else lives2--; 
+            if(lives1<=0 || lives2<=0){ 
+              gameState='gameOver'; 
+              playSound('gameover'); 
+              shakeIntensity = 0; 
+              showGameOverUI();
+            } 
+          }
           emojis.splice(i,1);
         }
       }
@@ -282,7 +401,6 @@
         p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life -= 0.03;
         if(p.life <= 0) particles.splice(i,1);
       }
-
       for(let i=floatingTexts.length-1; i>=0; i--) {
         let t = floatingTexts[i];
         t.y += t.vy; t.life -= 0.02; t.scale += 0.01;
@@ -290,19 +408,57 @@
       }
     }
 
+    function showGameOverUI() {
+      ui.classList.remove('hidden');
+      let scoreDisplay = `Puntuación: <b>${sharedScore}</b>`;
+      if (gameMode === '2p-vs') {
+          const p1Score = score1;
+          const p2Score = score2;
+          const winner = p1Score > p2Score ? p1Name : (p2Score > p1Score ? p2Name : 'Empate');
+          scoreDisplay = `${p1Name}: <b>${p1Score}</b> | ${p2Name}: <b>${p2Score}</b><br>Ganador: <b>${winner}</b>`;
+      }
+
+      ui.innerHTML = `
+        <h1 style="color:#EF476F; font-size:2em; margin-bottom:5px;">¡Fin de la Partida!</h1>
+        <p style="font-size:1.1em; margin:10px 0; color:#FFF;">${scoreDisplay}</p>
+        
+        <div id="inputSection">
+          <div class="input-group" style="margin: 15px auto;">
+            <label>Tu Nombre</label>
+            <input type="text" id="playerNameInput" maxlength="12" placeholder="Escribe tu nombre" style="width: 85%; padding: 10px; font-size: 1em;">
+          </div>
+          <button class="btn btn-start" onclick="handleSaveScore()">💾 Guardar Récord</button>
+        </div>
+
+        <div id="leaderboardSection" class="hidden"></div>
+        
+        <button class="btn btn-opt" style="margin-top:15px;" onclick="showMenu()">🔙 Volver al Menú</button>
+      `;
+      renderLeaderboard();
+    }
+
+    window.handleSaveScore = function() {
+      const nameInput = document.getElementById('playerNameInput');
+      const name = nameInput.value.trim() || 'Anónimo';
+      addRecord(name, sharedScore);
+      document.getElementById('inputSection').classList.add('hidden');
+      document.getElementById('leaderboardSection').classList.remove('hidden');
+      renderLeaderboard();
+    };
+
     function drawBasket(x, y, imgRef) {
       if(imgRef && imgRef.complete) ctx.drawImage(imgRef, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH);
       else { ctx.fillStyle='#D4A373'; ctx.fillRect(x-basketW/2, y-basketH/2, basketW, basketH); }
     }
 
     function draw() {
+      if(gameState === 'gameOver') return;
       ctx.save();
       if(shakeIntensity > 0) {
         const dx = (Math.random()-0.5) * shakeIntensity;
         const dy = (Math.random()-0.5) * shakeIntensity;
         ctx.translate(dx, dy);
       }
-
       ctx.clearRect(0,0,canvas.width,canvas.height);
       const g = ctx.createLinearGradient(0,0,0,canvas.height); g.addColorStop(0,'#87CEEB'); g.addColorStop(1,'#E0F7FA');
       ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -313,46 +469,27 @@
       }
       const bY = canvas.height-180;
       if(gameMode==='1p') drawBasket(basket1X, bY, cestaImg);
-      else {
-        drawBasket(basket1X, bY, cestaImg);
-        drawBasket(basket2X, bY, alexImg);
-      }
+      else { drawBasket(basket1X, bY, cestaImg); drawBasket(basket2X, bY, alexImg); }
       
-      // 🎨 DIBUJAR EMOJIS DESDE SPRITE SHEET (Escala ajustada al 50%)
       if(spriteLoaded && emojiW > 0) {
-        const scale = 0.50; // 📏 Ajuste: 50% del tamaño original
+        const scale = 0.50;
         const dw = emojiW * scale;
         const dh = emojiH * scale;
-        
         for(let e of emojis) { 
-          ctx.save(); 
-          ctx.translate(e.x,e.y); 
-          ctx.rotate(e.rot); 
-          // Recortar frame original, dibujar escalado al 50%
+          ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); 
           ctx.drawImage(spriteImg, e.emojiIdx * emojiW, 0, emojiW, emojiH, -dw/2, -dh/2, dw, dh);
           ctx.restore(); 
         }
       }
-      
       for(let p of particles) {
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-        ctx.fill();
+        ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
       }
       ctx.globalAlpha = 1.0;
-
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       for(let t of floatingTexts) {
-        ctx.globalAlpha = t.life;
-        ctx.fillStyle = t.color;
-        ctx.font = `bold ${24 * t.scale}px Arial`;
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 3;
-        ctx.strokeText(t.text, t.x, t.y);
-        ctx.fillText(t.text, t.x, t.y);
+        ctx.globalAlpha = t.life; ctx.fillStyle = t.color;
+        ctx.font = `bold ${24 * t.scale}px Arial`; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+        ctx.strokeText(t.text, t.x, t.y); ctx.fillText(t.text, t.x, t.y);
       }
       ctx.globalAlpha = 1.0;
       
@@ -362,12 +499,9 @@
         else if(gameMode==='2p-coop') { ctx.fillText(`🤝 Equipo: ${sharedScore}`,canvas.width/2,25); ctx.fillText('❤️'.repeat(sharedLives),canvas.width/2,48); }
         else { ctx.textAlign='left'; ctx.fillText(`${p1Name}: ${score1}`,10,25); ctx.fillText('❤️'.repeat(lives1),10,45);
                ctx.textAlign='right'; ctx.fillText(`${p2Name}: ${score2}`,canvas.width-10,25); ctx.fillText('❤️'.repeat(lives2),canvas.width-10,45); }
-        ctx.textAlign='center'; ctx.fillStyle='#E9C46A'; ctx.font='bold 20px Arial'; 
-        ctx.fillText(`Nivel ${level}`, canvas.width/2, 75);
-        ctx.fillStyle='#aaa'; ctx.font='14px Arial';
-        ctx.fillText(difficulties[selectedDifficulty].label, canvas.width/2, 95);
+        ctx.textAlign='center'; ctx.fillStyle='#E9C46A'; ctx.font='bold 20px Arial'; ctx.fillText(`Nivel ${level}`, canvas.width/2, 75);
+        ctx.fillStyle='#aaa'; ctx.font='14px Arial'; ctx.fillText(difficulties[selectedDifficulty].label, canvas.width/2, 95);
       }
-      
       if(gameState!=='gameOver') {
         const rem=Math.max(0,targetPerLevel-collectedInLevel), cY=canvas.height-110, boxW=80, boxH=80;
         ctx.fillStyle='rgba(20,30,50,0.6)';
@@ -375,38 +509,24 @@
         else { ctx.fillRect(canvas.width*0.25-boxW/2,cY,boxW,boxH); ctx.fillRect(canvas.width*0.75-boxW/2,cY,boxW,boxH);
                ctx.fillStyle='#FFF'; ctx.font='bold 45px Arial'; ctx.fillText(rem,canvas.width*0.25,cY+boxH/2); ctx.fillText(rem,canvas.width*0.75,cY+boxH/2); }
       }
-      
       if(gameState==='levelConfirm') {
         ctx.fillStyle='rgba(0,0,0,0.75)'; ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle='#4CAF50'; ctx.font='bold 28px Arial'; ctx.textAlign='center'; ctx.fillText('¡Nivel Completado! 🎉',canvas.width/2,canvas.height/2-90);
         const imgW=108, imgH=120, imgY=canvas.height/2-40;
         if(currentNaiaImg && currentNaiaImg.complete && currentNaiaImg.naturalWidth>0) ctx.drawImage(currentNaiaImg,canvas.width/2-imgW/2,imgY,imgW,imgH);
         else { ctx.fillStyle='#FFD166'; ctx.font='60px Arial'; ctx.fillText('🎮',canvas.width/2,imgY+50); }
-        ctx.fillStyle='#E0E0E0'; ctx.font='18px Arial'; ctx.fillText('🎯 Atrapa 15 emojis para pasar de nivel',canvas.width/2,imgY+imgH+35);
+        const instructionText = selectedDifficulty === 'extreme' ? "¡Atrapa sin parar!" : "🎯 Atrapa 15 emojis para pasar de nivel";
+        ctx.fillStyle='#E0E0E0'; ctx.font='18px Arial'; ctx.fillText(instructionText, canvas.width/2, imgY+imgH+35);
         const bw=200, bh=50, btnY=imgY+imgH+70;
         confirmBtnRect={x:canvas.width/2-bw/2, y:btnY, w:bw, h:bh};
         ctx.fillStyle='#E9C46A'; ctx.beginPath(); ctx.roundRect(confirmBtnRect.x,confirmBtnRect.y,confirmBtnRect.w,confirmBtnRect.h,12); ctx.fill();
         ctx.fillStyle='#1A1A2E'; ctx.font='bold 20px Arial'; ctx.fillText('▶ Siguiente Nivel',canvas.width/2,btnY+bh/2+2);
       }
-      
-      if(gameState==='gameOver') {
-        ctx.fillStyle='rgba(0,0,0,0.85)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle='#EF476F'; ctx.font='bold 34px Arial'; ctx.textAlign='center'; ctx.fillText('¡Fin de la Partida!',canvas.width/2,canvas.height/2-50);
-        ctx.fillStyle='#FFF'; ctx.font='20px Arial';
-        if(gameMode==='1p') ctx.fillText(`Puntuación: ${sharedScore}`,canvas.width/2,canvas.height/2);
-        else if(gameMode==='2p-coop') ctx.fillText(`Equipo: ${sharedScore}`,canvas.width/2,canvas.height/2);
-        else { const w=score1>score2?`¡Gana ${p1Name}! 🏆`:score2>score1?`¡Gana ${p2Name}! 🏆`:'¡Empate! 🤝'; ctx.fillText(w,canvas.width/2,canvas.height/2-10); ctx.fillText(`${p1Name}: ${score1} | ${p2Name}: ${score2}`,canvas.width/2,canvas.height/2+25); }
-        const rw=180,rh=45; confirmBtnRect={x:canvas.width/2-rw/2,y:canvas.height/2+60,w:rw,h:rh};
-        ctx.fillStyle='#2A9D8F'; ctx.beginPath(); ctx.roundRect(confirmBtnRect.x,confirmBtnRect.y,confirmBtnRect.w,confirmBtnRect.h,10); ctx.fill();
-        ctx.fillStyle='#FFF'; ctx.font='bold 18px Arial'; ctx.fillText('Volver al Menú',canvas.width/2,confirmBtnRect.y+rh/2+2);
-      }
-
       ctx.restore();
     }
 
     window.addEventListener('keydown', e=>keys[e.key]=true);
     window.addEventListener('keyup', e=>keys[e.key]=false);
-    
     function handleInput(e) {
       e.preventDefault();
       if(gameState==='levelConfirm'||gameState==='gameOver') {
@@ -441,7 +561,10 @@
     }
 
     function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
-    showMenu(); gameLoop();
+    
+    // 🚀 INICIO DEL JUEGO CON PANTALLA DE CARGA
+    showSplashScreen();
+    gameLoop();
   </script>
 </body>
 </html>

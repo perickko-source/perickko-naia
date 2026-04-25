@@ -48,6 +48,19 @@
     }
     .input-group input:focus { outline: none; border-color: #0077B6; }
     .hidden { display: none !important; }
+    
+    /* Efecto visual de pérdida de vida */
+    .life-loss-effect {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255, 0, 0, 0.3);
+      pointer-events: none;
+      animation: flashRed 0.3s ease-out;
+      z-index: 20;
+    }
+    @keyframes flashRed {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -118,13 +131,14 @@
     let level = 1, collectedInLevel = 0, targetPerLevel = 15;
     let gameState = 'menu', fallSpeed = 1.2, spawnInterval = 90, confirmBtnRect = null;
 
+    // ✅ ARRAY 100% BLINDADO (Verificado carácter por carácter)
     const yellowEmojis = [
-      '😀','😁','😂','😊','😇','🙂','🙃','😉','😌','','😘','','😙','😚','😋','😛','😝','😜','🤪',
-      '🤓','','','','😏','😒','😞','😔','😟','😕','','☹️','','😖','😫','😩','🥺','',
-      '😭','😤','😠','😡','🤬','🤯','','🥵','','😱','😨','😰','😥','😓','','🤔','','🤫',
-      '🤥','','😑','😬','','😯','😦','😧','😮','😲','','','','','😵','','🥴',
-      '🤢','','🤧','','🤒','','🤑','','😈','','','👺','','','','☠️','',
-      '','🤖','','😸','😹','😻','😼','😽','🙀','','😾'
+      '😀','😁','😂','😊','😇','🙂','🙃','😉','😌','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪',
+      '🤓','','🤩','','','😒','😞','😔','😟','😕','🙁','️','😖','😫','😩','🥺','😭',
+      '😤','😠','😡','🤬','','🥵','','😱','😨','😰','😥','😓','','🤔','','🤥','',
+      '😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','🤤','😵','🤐','','🤢','','🤧',
+      '😷','🤒','🤕','🤑','🤠','😈','👿','👺','👻','☠️','👽','👾','🤖','😺','😸','😹','😻',
+      '😼','😽','🙀',''
     ];
 
     function resize() {
@@ -184,17 +198,26 @@
       bgMusic.play().catch(()=>{}); ui.classList.add('hidden');
     }
 
+    // 🛡️ TRUCO ANTI-FANTASMAS: Bucle de seguridad
     function spawnEmoji() {
-      const emoji = yellowEmojis[Math.floor(Math.random() * yellowEmojis.length)];
+      let emoji = '';
+      // Seguir intentando hasta obtener un emoji válido (no vacío)
+      while (!emoji || emoji.trim() === '') { 
+         emoji = yellowEmojis[Math.floor(Math.random() * yellowEmojis.length)];
+      }
+      
       let x, side;
       if (gameMode === '1p') { x = Math.random()*(canvas.width*0.6)+canvas.width*0.2; side = 1; }
       else { side = Math.random()<0.5?1:2; x = side===1 ? Math.random()*(canvas.width*0.35)+canvas.width*0.075 : Math.random()*(canvas.width*0.35)+canvas.width*0.575; }
+      
       emojis.push({x, y:-30, r:20, vy:fallSpeed+Math.random()*0.3, emoji, rot:0, rotSpd:(Math.random()-0.5)*0.05, side});
     }
+
     function update() {
       if (gameState !== 'playing') return;
       frameCount++;
       if (frameCount % spawnInterval === 0) spawnEmoji();
+      
       const spd = 6;
       if (gameMode === '1p') {
         if (keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
@@ -205,13 +228,23 @@
         if (keys['a']||keys['A']) basket2X = Math.max(canvas.width*0.55, basket2X - spd);
         if (keys['d']||keys['D']) basket2X = Math.min(canvas.width - basketW/2, basket2X + spd);
       }
+      
       const bBase = canvas.height - 180;
       const bTop = bBase + basketOffY;
       const bCenter = bTop + basketH/2;
       const b1 = {l: basket1X-basketW/2+basketOffX, r: basket1X+basketW/2+basketOffX, c: bCenter};
       const b2 = {l: basket2X-basketW/2+basketOffX, r: basket2X+basketW/2+basketOffX, c: bCenter};
+
       for (let i=emojis.length-1; i>=0; i--) {
-        let e = emojis[i]; e.y += e.vy; e.rot += e.rotSpd; let caught = false;
+        let e = emojis[i]; 
+        e.y += e.vy; e.rot += e.rotSpd; 
+        
+        // 🔒 SEGUNDO SEGURO: Si por error existe un emoji vacío, lo eliminamos
+        if (!e.emoji || e.emoji.trim() === '') {
+           emojis.splice(i,1); continue; 
+        }
+
+        let caught = false;
         if (e.y >= b1.c - e.r && e.y <= b1.c + basketH/2) {
           if (gameMode==='1p' && e.x>b1.l && e.x<b1.r) { sharedScore++; caught=true; }
           else if (gameMode==='2p-coop' && ((e.x>b1.l&&e.x<b1.r)||(e.x>b2.l&&e.x<b2.r))) { sharedScore++; caught=true; }
@@ -224,13 +257,23 @@
           if (collectedInLevel >= targetPerLevel) { gameState='levelConfirm'; currentNaiaImg=naiaImages[Math.floor(Math.random()*naiaImages.length)]; playSound('levelup'); }
           continue;
         }
+        // Fallo: sale por debajo
         if (e.y - e.r > bTop + basketH + 15) {
+          triggerLifeLoss(); // Efecto visual
           if (gameMode==='1p'||gameMode==='2p-coop') { sharedLives--; if(sharedLives<=0){gameState='gameOver';playSound('gameover');} }
           else { if(e.side===1)lives1--; else lives2--; if(lives1<=0||lives2<=0){gameState='gameOver';playSound('gameover');} }
           emojis.splice(i,1);
         }
       }
     }
+
+    function triggerLifeLoss() {
+      const flash = document.createElement('div');
+      flash.className = 'life-loss-effect';
+      wrapper.appendChild(flash);
+      setTimeout(() => flash.remove(), 300);
+    }
+
     function drawBasket(x,y) {
       if (cestaLoaded) ctx.drawImage(cestaImg, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH);
       else { ctx.fillStyle='#D4A373'; ctx.fillRect(x-basketW/2, y-basketH/2, basketW, basketH); }

@@ -84,13 +84,13 @@
     let level = 1, collectedInLevel = 0, targetPerLevel = 15;
     let gameState = 'menu', fallSpeed = 1.2, spawnInterval = 90, confirmBtnRect = null;
 
-    // 🛡️ ARRAY DEFINITIVO + BLINDAJE AUTOMÁTICO
+    // 🛡️ LISTA COMPATIBLE: Eliminados emojis que dan cuadrado negro en algunos dispositivos
     const yellowEmojis = [
-      '🥰','😍','😘','🤣','😀','😅','😊','😗','😚','🤗','🫡','😑','😣','🤐','😫','😌','😝','😓','🫤',
-      '🤑','🙁','😟','😭','😨','😬','😱','😬','😱','😳','😵‍💫','🤒','🤮','🥳','🥹','🤥','🙂‍↕️','🫢',
-      '🤓','🫣','🧐','🤫','🤭','🫨','🙂‍↔️','🥺','😇','🤧','🤕','😷','😠','🥴','🤪','😵','😮‍💨','😩',
-      '🤯','😧','😦','😤','😢','😞','😖','😲','☹️','🫠','🙃','😔','😕','😒','🤤','😛','😜','😴',
-      '🥱','😯','😪','😮','😥','🙄','😏','🫥','😶','🤨','😐','🤔','🤩'
+      '🥰','😍','😘','🤣','😀','😅','😊','😗','😚','🤗','😑','😣','🤐','😫','😌','😝','😓',
+      '🤑','🙁','😟','😭','😨','😬','😱','😳','🤒','🤮','🥳','🥹','🤥','🫢',
+      '🤓','🧐','🤫','🤭','🥺','😇','🤧','🤕','😷','😠','🥴','🤪','😵','😩',
+      '🤯','😧','😦','😤','😢','😞','😖','😲','☹️','🙃','😔','😕','😒','🤤','😛','😜','😴',
+      '🥱','😯','😪','😮','😥','🙄','😏','😶','🤨','😐','🤔','🤩'
     ].filter(e => e && e.trim().length > 0); // 🔒 BLINDAJE: Elimina huecos vacíos automáticamente
 
     function resize() {
@@ -194,12 +194,11 @@
       // 🎯 COLISIÓN AJUSTADA (+26px offset vertical)
       const basketBaseY = canvas.height - 180;
       const basketVisualTop = basketBaseY + basketOffY;
-      const basketCenterY = basketVisualTop + basketH / 2 + 26; // ✅ Offset aplicado
+      const basketCenterY = basketVisualTop + basketH / 2 + 26;
       
       const b1 = { l: basket1X - basketW/2 + basketOffX, r: basket1X + basketW/2 + basketOffX, c: basketCenterY };
       const b2 = { l: basket2X - basketW/2 + basketOffX, r: basket2X + basketW/2 + basketOffX, c: basketCenterY };
 
-      // 🔄 EMOJIS
       for(let i=emojis.length-1; i>=0; i--) {
         let e = emojis[i]; e.y += e.vy; e.rot += e.rotSpd;
         

@@ -23,6 +23,7 @@
     .diff-pro { background: #ffc107; color: #333; }
     .diff-expert { background: #fd7e14; }
     .diff-impossible { background: #dc3545; }
+    .diff-extreme { background: #8B0000; color: #fff; }
     .input-group { margin: 10px 0; width: 80%; max-width: 280px; }
     .input-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #B0B0B0; }
     .input-group input { width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #444; background: #222; color: white; font-size: 1em; text-align: center; touch-action: manipulation; }
@@ -76,7 +77,8 @@
       semi:       { fallSpeed: 1.4, spawnInterval: 80, lives1p: 6, lives2p: 4, speedInc: 0.045, spawnDec: 2.0, label: '🔵 Semi' },
       pro:        { fallSpeed: 1.6, spawnInterval: 70, lives1p: 5, lives2p: 3, speedInc: 0.055, spawnDec: 2.5, label: '🟡 Pro' },
       expert:     { fallSpeed: 1.9, spawnInterval: 60, lives1p: 4, lives2p: 3, speedInc: 0.070, spawnDec: 3.0, label: '🔴 Experto' },
-      impossible: { fallSpeed: 2.2, spawnInterval: 50, lives1p: 3, lives2p: 2, speedInc: 0.085, spawnDec: 3.5, label: '⚫ Imposible' }
+      impossible: { fallSpeed: 2.2, spawnInterval: 50, lives1p: 3, lives2p: 2, speedInc: 0.085, spawnDec: 3.5, label: '⚫ Imposible' },
+      extreme:    { fallSpeed: 8.5, spawnInterval: 35, lives1p: 2, lives2p: 1, speedInc: 0.05, spawnDec: 0, label: '💀 Extremo', musicRate: 1.5 }
     };
 
     let gameMode = '1p', p1Name = 'Jugador 1', p2Name = 'Jugador 2';
@@ -89,13 +91,13 @@
     let level = 1, collectedInLevel = 0, targetPerLevel = 15;
     let gameState = 'menu', fallSpeed = 1.2, spawnInterval = 90, confirmBtnRect = null;
 
-    // 🛡️ LISTA EXACTA APROBADA + BLINDAJE
+    // 🛡️ LISTA EXACTA SOLICITADA + BLINDAJE
     const yellowEmojis = [
-      '🥰','','😘','🤣','😀','😅','😊','😗','😚','🤗','','😣','🤐','','😌','😝','😓',
-      '🤑','🙁','😟','😭','😨','😬','😱','😳','','','','🥹','','',
-      '','🧐','','🤭','','😇','🤧','🤕','😷','😠','','🤪','😵','😩',
-      '🤯','','😦','😤','😢','😞','😖','😲','☹️','','😔','😕','😒','🤤','😛','😜','😴',
-      '🥱','😯','😪','😮','😥','🙄','😏','😶','','','🤔',''
+      '🥰','','😘','😀','','😊','😗','','🤗','','😫','😌','😝','😓',
+      '🤑','😟','😭','😨','😬','😱','😳','🤒','','🥹','','🫢','','🤫',
+      '🥺','','😷','😠','🥴','🤪','😵','😩','🤯','','😤','😢','😞','😖',
+      '😲','️','🙃','','😒','🤤','😛','😜','😴','','😯','😪','😮','😥',
+      '🙄','','😶','😐','🤔','🤩'
     ].filter(e => e && e.trim().length > 0);
 
     function resize() {
@@ -111,6 +113,9 @@
     if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 
     function showMenu() {
+      // 🎵 RESET VELOCIDAD MÚSICA AL VOLVER AL MENÚ O GAME OVER
+      bgMusic.playbackRate = 1.0;
+      
       gameState = 'menu'; started = false;
       ui.classList.remove('hidden');
       ui.innerHTML = `
@@ -166,6 +171,9 @@
       emojis = []; frameCount = 0; keys = {};
       fallSpeed = diff.fallSpeed; spawnInterval = diff.spawnInterval;
       
+      // 🎵 VELOCIDAD MÚSICA SEGÚN DIFICULTAD
+      bgMusic.playbackRate = diff.musicRate || 1.0;
+      
       if(gameMode === '1p') { sharedLives = diff.lives1p; basket1X = canvas.width/2; }
       else { lives1 = lives2 = diff.lives2p; sharedLives = diff.lives1p; basket1X = canvas.width*0.25; basket2X = canvas.width*0.75; }
       
@@ -211,7 +219,7 @@
         if(e.y >= b1.c - e.r && e.y <= b1.c + basketH/2) {
           if(gameMode==='1p' && e.x>b1.l && e.x<b1.r) { sharedScore++; caught=true; }
           else if(gameMode==='2p-coop' && ((e.x>b1.l&&e.x<b1.r)||(e.x>b2.l&&e.x<b2.r))) { sharedScore++; caught=true; }
-          // ✅ CORREGIDO: e.x < b1.r (antes tenía un error tipográfico > b2.r)
+          // ✅ CORREGIDO: e.x < b1.r
           else if(gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x<b1.r)||(e.side===2&&e.x>b2.l&&e.x<b2.r))) {
             if(e.side===1) score1++; else score2++; caught=true;
           }
@@ -338,7 +346,7 @@
       playSound('level'); level++; collectedInLevel=0;
       const diff = difficulties[selectedDifficulty];
       fallSpeed += diff.speedInc;
-      spawnInterval = Math.max(40, spawnInterval - diff.spawnDec);
+      spawnInterval = Math.max(30, spawnInterval - diff.spawnDec);
       emojis=[]; 
       gameState='playing';
     }

@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ATRAPA EMOJIS CON NAIA</title>
+  
+  <!-- 🎨 FAVICON Y CONFIGURACIÓN MÓVIL -->
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; display: flex; justify-content: center; align-items: center; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -159,7 +168,6 @@
     function showSplashScreen() {
       const splash = document.createElement('div');
       splash.id = 'splash-screen';
-      // Portada a toda pantalla con color de fondo por si la imagen tarda en cargar
       splash.style.cssText = `
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         background: #1a1a2e url('portada.png') no-repeat center center;
@@ -194,20 +202,17 @@
       wrapper.appendChild(splash);
 
       const startLoading = () => {
-        // Iniciar animación de la barra (10 segundos)
         requestAnimationFrame(() => { bar.style.width = '100%'; });
         
-        // Esperar 10 segundos antes de ir al menú
         setTimeout(() => {
-          splash.style.opacity = '0'; // Fade out
+          splash.style.opacity = '0';
           setTimeout(() => {
-            splash.remove(); // Eliminar del DOM
-            showMenu(); // Mostrar menú principal
+            splash.remove();
+            showMenu();
           }, 1000);
         }, 10000);
       };
 
-      // Iniciar cuando la imagen esté lista (o inmediatamente si ya cargó)
       if (portadaImg.complete) startLoading();
       else portadaImg.onload = startLoading;
     }

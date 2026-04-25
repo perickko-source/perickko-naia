@@ -6,69 +6,36 @@
   <title>ATRAPA EMOJIS CON NAIA</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
-    html, body {
-      width: 100%; height: 100%;
-      overflow: hidden;
-      background: #1a1a2e;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-    }
-    #gameWrapper {
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; display: flex; justify-content: center; align-items: center; font-family: 'Segoe UI', system-ui, sans-serif; }
+    #gameWrapper { position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
     #gameCanvas { display: block; width: 100%; height: 100%; touch-action: none; }
-    #ui {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      background: rgba(10, 15, 30, 0.92);
-      color: white; text-align: center; padding: 20px; z-index: 10;
-    }
+    #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(10, 15, 30, 0.92); color: white; text-align: center; padding: 20px; z-index: 10; }
     #ui h1 { font-size: 2em; margin-bottom: 10px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); color: #FFD166; }
     #ui h2 { font-size: 1.3em; margin: 15px 0 10px; color: #E0E0E0; }
-    .btn {
-      padding: 14px 24px; font-size: 1em; border: none; border-radius: 10px;
-      color: white; cursor: pointer; margin: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-      font-weight: bold; min-width: 180px;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
+    .btn { padding: 14px 24px; font-size: 1em; border: none; border-radius: 10px; color: white; cursor: pointer; margin: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); font-weight: bold; min-width: 180px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     .btn:active { transform: scale(0.96); }
     .btn-mode { background: #0077B6; }
     .btn-start { background: #2A9D8F; }
+    .btn-opt { background: #6C757D; font-size: 0.9em; padding: 10px 20px; }
+    .diff-btn { width: 90%; max-width: 220px; margin: 6px; font-size: 1em; }
+    .diff-easy { background: #28a745; }
+    .diff-semi { background: #17a2b8; }
+    .diff-pro { background: #ffc107; color: #333; }
+    .diff-expert { background: #fd7e14; }
+    .diff-impossible { background: #dc3545; }
     .input-group { margin: 10px 0; width: 80%; max-width: 280px; }
     .input-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #B0B0B0; }
-    .input-group input {
-      width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #444;
-      background: #222; color: white; font-size: 1em; text-align: center;
-      touch-action: manipulation;
-    }
+    .input-group input { width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #444; background: #222; color: white; font-size: 1em; text-align: center; touch-action: manipulation; }
     .input-group input:focus { outline: none; border-color: #0077B6; }
     .hidden { display: none !important; }
-    
-    /* Efecto visual de pérdida de vida */
-    .life-loss-effect {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255, 0, 0, 0.3);
-      pointer-events: none;
-      animation: flashRed 0.3s ease-out;
-      z-index: 20;
-    }
-    @keyframes flashRed {
-      0% { opacity: 1; }
-      100% { opacity: 0; }
-    }
+    .life-loss-effect { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 0, 0, 0.3); pointer-events: none; animation: flashRed 0.3s ease-out; z-index: 20; }
+    @keyframes flashRed { 0% { opacity: 1; } 100% { opacity: 0; } }
   </style>
 </head>
 <body>
   <div id="gameWrapper">
     <canvas id="gameCanvas"></canvas>
-    <div id="ui">
-      <!-- El contenido se genera dinámicamente con JS -->
-    </div>
+    <div id="ui"></div>
   </div>
 
   <script>
@@ -77,49 +44,36 @@
     const ui = document.getElementById('ui');
     const wrapper = document.getElementById('gameWrapper');
 
-    const cestaImg = new Image();
-    cestaImg.src = 'naia-cesta.png';
+    const cestaImg = new Image(); cestaImg.src = 'naia-cesta.png';
     let cestaLoaded = false;
-    cestaImg.onload = () => { cestaLoaded = true; };
-    cestaImg.onerror = () => { cestaLoaded = false; };
+    cestaImg.onload = () => cestaLoaded = true;
 
     const naiaImages = [];
-    const naiaImageNames = ['naia1.png', 'naia2.png', 'naia3.png', 'naia4.png', 'naia5.png', 'naia6.png', 'naia7.png', 'naia8.png'];
+    ['naia1.png','naia2.png','naia3.png','naia4.png','naia5.png','naia6.png','naia7.png','naia8.png'].forEach((n,i) => { const im = new Image(); im.src = n; naiaImages[i] = im; });
     let currentNaiaImg = null;
-    naiaImageNames.forEach((name, index) => { const img = new Image(); img.src = name; naiaImages[index] = img; });
 
     let audioCtx;
-    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-    function playSound(type) {
-      initAudio();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const now = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      switch(type) {
-        case 'catch':
-          osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(900, now + 0.1);
-          gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-          osc.start(now); osc.stop(now + 0.1); break;
-        case 'levelup':
-          [400, 600, 800].forEach((f, i) => {
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.value = f;
-            g.gain.setValueAtTime(0.1, now + i*0.12); g.gain.exponentialRampToValueAtTime(0.01, now + i*0.12 + 0.15);
-            o.start(now + i*0.12); o.stop(now + i*0.12 + 0.15);
-          }); break;
-        case 'gameover':
-          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(100, now + 0.5);
-          gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
-          osc.start(now); osc.stop(now + 0.5); break;
-        case 'click':
-          osc.type = 'sine'; osc.frequency.value = 800;
-          gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-          osc.start(now); osc.stop(now + 0.05); break;
-      }
+    function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+    function playSound(t) {
+      initAudio(); if(audioCtx.state==='suspended') audioCtx.resume();
+      const now=audioCtx.currentTime, o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      if(t==='catch'){ o.type='sine'; o.frequency.setValueAtTime(600,now); o.frequency.exponentialRampToValueAtTime(900,now+0.1); g.gain.setValueAtTime(0.15,now); g.gain.exponentialRampToValueAtTime(0.01,now+0.1); o.start(now); o.stop(now+0.1); }
+      else if(t==='levelup'){ [400,600,800].forEach((f,i)=>{ const os=audioCtx.createOscillator(), gs=audioCtx.createGain(); os.connect(gs); gs.connect(audioCtx.destination); os.type='square'; os.frequency.value=f; gs.gain.setValueAtTime(0.1,now+i*0.12); gs.gain.exponentialRampToValueAtTime(0.01,now+i*0.12+0.15); os.start(now+i*0.12); os.stop(now+i*0.12+0.15); }); }
+      else if(t==='gameover'){ o.type='sawtooth'; o.frequency.setValueAtTime(300,now); o.frequency.linearRampToValueAtTime(100,now+0.5); g.gain.setValueAtTime(0.2,now); g.gain.linearRampToValueAtTime(0.01,now+0.5); o.start(now); o.stop(now+0.5); }
+      else if(t==='click'){ o.type='sine'; o.frequency.value=800; g.gain.setValueAtTime(0.1,now); g.gain.exponentialRampToValueAtTime(0.01,now+0.05); o.start(now); o.stop(now+0.05); }
     }
     const bgMusic = new Audio('naia.ogg'); bgMusic.loop = true; bgMusic.volume = 0.3;
+
+    // 🎚️ SISTEMA DE DIFICULTADES
+    let selectedDifficulty = 'easy';
+    const difficulties = {
+      easy:       { fallSpeed: 1.2, spawnInterval: 90, lives1p: 7, lives2p: 5, speedInc: 0.035, spawnDec: 1.5, label: '🟢 Fácil' },
+      semi:       { fallSpeed: 1.4, spawnInterval: 80, lives1p: 6, lives2p: 4, speedInc: 0.045, spawnDec: 2.0, label: '🔵 Semi' },
+      pro:        { fallSpeed: 1.6, spawnInterval: 70, lives1p: 5, lives2p: 3, speedInc: 0.055, spawnDec: 2.5, label: '🟡 Pro' },
+      expert:     { fallSpeed: 1.9, spawnInterval: 60, lives1p: 4, lives2p: 3, speedInc: 0.070, spawnDec: 3.0, label: '🔴 Experto' },
+      impossible: { fallSpeed: 2.2, spawnInterval: 50, lives1p: 3, lives2p: 2, speedInc: 0.085, spawnDec: 3.5, label: '⚫ Imposible' }
+    };
 
     let gameMode = '1p', p1Name = 'Jugador 1', p2Name = 'Jugador 2';
     let basket1X, basket2X;
@@ -131,13 +85,12 @@
     let level = 1, collectedInLevel = 0, targetPerLevel = 15;
     let gameState = 'menu', fallSpeed = 1.2, spawnInterval = 90, confirmBtnRect = null;
 
-    // ✅ ARRAY 100% BLINDADO (Verificado carácter por carácter)
     const yellowEmojis = [
-      '😀','😁','😂','😊','😇','🙂','🙃','😉','😌','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪',
-      '🤓','','🤩','','','😒','😞','😔','😟','😕','🙁','️','😖','😫','😩','🥺','😭',
-      '😤','😠','😡','🤬','','🥵','','😱','😨','😰','😥','😓','','🤔','','🤥','',
+      '😀','😁','😂','😊','😇','🙂','🙃','😉','😌','','😘','😗','😙','😚','😋','😛','😝','😜','',
+      '🤓','','🤩','','','😒','😞','😔','😟','😕','🙁','️','😖','😫','😩','','😭',
+      '😤','😠','😡','🤬','','','','😱','😨','😰','😥','😓','','🤔','','🤥','',
       '😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','🤤','😵','🤐','','🤢','','🤧',
-      '😷','🤒','🤕','🤑','🤠','😈','👿','👺','👻','☠️','👽','👾','🤖','😺','😸','😹','😻',
+      '😷','🤒','','🤑','','😈','','👺','','☠️','','👾','','😺','😸','😹','😻',
       '😼','😽','🙀',''
     ];
 
@@ -145,34 +98,47 @@
       const ratio = 9/16;
       const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
       const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      const winRatio = vw / vh;
-      if (winRatio < ratio) {
-        wrapper.style.width = vw + 'px';
-        wrapper.style.height = (vw / ratio) + 'px';
-        canvas.width = vw; canvas.height = vw / ratio;
-      } else {
-        wrapper.style.height = vh + 'px';
-        wrapper.style.width = (vh * ratio) + 'px';
-        canvas.height = vh; canvas.width = vh * ratio;
-      }
-      basket1X = canvas.width * 0.25;
-      basket2X = canvas.width * 0.75;
+      if (vw/vh < ratio) { wrapper.style.width = vw+'px'; wrapper.style.height = (vw/ratio)+'px'; canvas.width=vw; canvas.height=vw/ratio; }
+      else { wrapper.style.height = vh+'px'; wrapper.style.width = (vh*ratio)+'px'; canvas.height=vh; canvas.width=vh*ratio; }
+      basket1X = canvas.width*0.25; basket2X = canvas.width*0.75;
     }
     resize();
     window.addEventListener('resize', resize);
-    if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+    if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 
+    // 🖥️ UI & MENÚS
     function showMenu() {
       gameState = 'menu'; started = false;
       ui.classList.remove('hidden');
       ui.innerHTML = `
         <h1>ATRAPA EMOJIS<br>CON NAIA</h1>
-        <h2>Selecciona Modo</h2>
+        <div style="margin-bottom:15px; font-size:0.9em; color:#aaa;">Dificultad: <span id="diffLabel" style="color:#4CAF50; font-weight:bold;">${difficulties[selectedDifficulty].label}</span></div>
         <button class="btn btn-mode" onclick="showNameInput('1p')">👤 1 Jugador</button>
         <button class="btn btn-mode" onclick="showNameInput('2p-coop')">🤝 2 Jugadores Cooperativo</button>
         <button class="btn btn-mode" onclick="showNameInput('2p-vs')">⚔️ 2 Jugadores Competitivo</button>
+        <button class="btn btn-opt" onclick="showDifficultyMenu()">⚙️ Cambiar Dificultad</button>
       `;
     }
+
+    function showDifficultyMenu() {
+      playSound('click');
+      let btns = '';
+      for(let k in difficulties) {
+        btns += `<button class="btn diff-btn diff-${k}" onclick="setDifficulty('${k}')">${difficulties[k].label}</button>`;
+      }
+      ui.innerHTML = `
+        <h2>Selecciona Dificultad</h2>
+        <div style="display:flex; flex-direction:column; align-items:center; width:100%;">${btns}</div>
+        <button class="btn btn-opt" style="margin-top:20px;" onclick="showMenu()">⬅️ Volver</button>
+      `;
+    }
+
+    window.setDifficulty = function(mode) {
+      selectedDifficulty = mode;
+      playSound('click');
+      showMenu();
+    };
+
     window.showNameInput = function(mode) {
       playSound('click'); gameMode = mode; gameState = 'nameInput';
       const is2p = mode.includes('2p');
@@ -185,82 +151,74 @@
       `;
       document.getElementById('startGameBtn').onclick = () => {
         p1Name = document.getElementById('name1').value.trim() || 'Jugador 1';
-        if (is2p) p2Name = document.getElementById('name2').value.trim() || 'Jugador 2';
+        if(is2p) p2Name = document.getElementById('name2').value.trim() || 'Jugador 2';
         playSound('click'); startGame();
       };
     };
+
     function startGame() {
+      const diff = difficulties[selectedDifficulty];
       score1 = score2 = sharedScore = 0; level = 1; collectedInLevel = 0;
       gameOver = false; started = true; gameState = 'playing';
-      emojis = []; frameCount = 0; keys = {}; fallSpeed = 1.2; spawnInterval = 90;
-      if (gameMode === '1p') { lives1 = sharedLives = 7; basket1X = canvas.width/2; }
-      else { lives1 = lives2 = 5; sharedLives = 7; basket1X = canvas.width*0.25; basket2X = canvas.width*0.75; }
+      emojis = []; frameCount = 0; keys = {};
+      fallSpeed = diff.fallSpeed; spawnInterval = diff.spawnInterval;
+      
+      if(gameMode === '1p') { sharedLives = diff.lives1p; basket1X = canvas.width/2; }
+      else { lives1 = lives2 = diff.lives2p; sharedLives = diff.lives1p; basket1X = canvas.width*0.25; basket2X = canvas.width*0.75; }
+      
       bgMusic.play().catch(()=>{}); ui.classList.add('hidden');
     }
 
-    // 🛡️ TRUCO ANTI-FANTASMAS: Bucle de seguridad
+    // 🎮 LÓGICA
     function spawnEmoji() {
       let emoji = '';
-      // Seguir intentando hasta obtener un emoji válido (no vacío)
-      while (!emoji || emoji.trim() === '') { 
-         emoji = yellowEmojis[Math.floor(Math.random() * yellowEmojis.length)];
-      }
-      
+      while(!emoji || emoji.trim() === '') emoji = yellowEmojis[Math.floor(Math.random() * yellowEmojis.length)];
       let x, side;
-      if (gameMode === '1p') { x = Math.random()*(canvas.width*0.6)+canvas.width*0.2; side = 1; }
+      if(gameMode === '1p') { x = Math.random()*(canvas.width*0.6)+canvas.width*0.2; side = 1; }
       else { side = Math.random()<0.5?1:2; x = side===1 ? Math.random()*(canvas.width*0.35)+canvas.width*0.075 : Math.random()*(canvas.width*0.35)+canvas.width*0.575; }
-      
       emojis.push({x, y:-30, r:20, vy:fallSpeed+Math.random()*0.3, emoji, rot:0, rotSpd:(Math.random()-0.5)*0.05, side});
     }
 
     function update() {
-      if (gameState !== 'playing') return;
+      if(gameState !== 'playing') return;
       frameCount++;
-      if (frameCount % spawnInterval === 0) spawnEmoji();
+      if(frameCount % spawnInterval === 0) spawnEmoji();
       
       const spd = 6;
-      if (gameMode === '1p') {
-        if (keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
-        if (keys['ArrowRight']) basket1X = Math.min(canvas.width - basketW/2, basket1X + spd);
+      if(gameMode === '1p') {
+        if(keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
+        if(keys['ArrowRight']) basket1X = Math.min(canvas.width - basketW/2, basket1X + spd);
       } else {
-        if (keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
-        if (keys['ArrowRight']) basket1X = Math.min(canvas.width*0.45, basket1X + spd);
-        if (keys['a']||keys['A']) basket2X = Math.max(canvas.width*0.55, basket2X - spd);
-        if (keys['d']||keys['D']) basket2X = Math.min(canvas.width - basketW/2, basket2X + spd);
+        if(keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
+        if(keys['ArrowRight']) basket1X = Math.min(canvas.width*0.45, basket1X + spd);
+        if(keys['a']||keys['A']) basket2X = Math.max(canvas.width*0.55, basket2X - spd);
+        if(keys['d']||keys['D']) basket2X = Math.min(canvas.width - basketW/2, basket2X + spd);
       }
       
-      const bBase = canvas.height - 180;
-      const bTop = bBase + basketOffY;
-      const bCenter = bTop + basketH/2;
+      const bBase = canvas.height - 180, bTop = bBase + basketOffY, bCenter = bTop + basketH/2;
       const b1 = {l: basket1X-basketW/2+basketOffX, r: basket1X+basketW/2+basketOffX, c: bCenter};
       const b2 = {l: basket2X-basketW/2+basketOffX, r: basket2X+basketW/2+basketOffX, c: bCenter};
 
-      for (let i=emojis.length-1; i>=0; i--) {
-        let e = emojis[i]; 
-        e.y += e.vy; e.rot += e.rotSpd; 
+      for(let i=emojis.length-1; i>=0; i--) {
+        let e = emojis[i]; e.y += e.vy; e.rot += e.rotSpd;
+        if(!e.emoji || e.emoji.trim()==='') { emojis.splice(i,1); continue; }
         
-        // 🔒 SEGUNDO SEGURO: Si por error existe un emoji vacío, lo eliminamos
-        if (!e.emoji || e.emoji.trim() === '') {
-           emojis.splice(i,1); continue; 
-        }
-
         let caught = false;
-        if (e.y >= b1.c - e.r && e.y <= b1.c + basketH/2) {
-          if (gameMode==='1p' && e.x>b1.l && e.x<b1.r) { sharedScore++; caught=true; }
-          else if (gameMode==='2p-coop' && ((e.x>b1.l&&e.x<b1.r)||(e.x>b2.l&&e.x<b2.r))) { sharedScore++; caught=true; }
-          else if (gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x<b1.r)||(e.side===2&&e.x>b2.l&&e.x<b2.r))) {
+        if(e.y >= b1.c - e.r && e.y <= b1.c + basketH/2) {
+          if(gameMode==='1p' && e.x>b1.l && e.x<b1.r) { sharedScore++; caught=true; }
+          else if(gameMode==='2p-coop' && ((e.x>b1.l&&e.x<b1.r)||(e.x>b2.l&&e.x<b2.r))) { sharedScore++; caught=true; }
+          else if(gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x<b1.r)||(e.side===2&&e.x>b2.l&&e.x<b2.r))) {
             if(e.side===1) score1++; else score2++; caught=true;
           }
         }
-        if (caught) {
+        if(caught) {
           playSound('catch'); collectedInLevel++; emojis.splice(i,1);
-          if (collectedInLevel >= targetPerLevel) { gameState='levelConfirm'; currentNaiaImg=naiaImages[Math.floor(Math.random()*naiaImages.length)]; playSound('levelup'); }
+          if(collectedInLevel >= targetPerLevel) { gameState='levelConfirm'; currentNaiaImg=naiaImages[Math.floor(Math.random()*naiaImages.length)]; playSound('levelup'); }
           continue;
         }
-        // Fallo: sale por debajo
-        if (e.y - e.r > bTop + basketH + 15) {
-          triggerLifeLoss(); // Efecto visual
-          if (gameMode==='1p'||gameMode==='2p-coop') { sharedLives--; if(sharedLives<=0){gameState='gameOver';playSound('gameover');} }
+        if(e.y - e.r > bTop + basketH + 15) {
+          triggerLifeLoss();
+          if(gameMode==='1p'||gameMode==='2p-coop') { sharedLives--; if(sharedLives<=0){gameState='gameOver';playSound('gameover');} }
           else { if(e.side===1)lives1--; else lives2--; if(lives1<=0||lives2<=0){gameState='gameOver';playSound('gameover');} }
           emojis.splice(i,1);
         }
@@ -268,79 +226,91 @@
     }
 
     function triggerLifeLoss() {
-      const flash = document.createElement('div');
-      flash.className = 'life-loss-effect';
-      wrapper.appendChild(flash);
-      setTimeout(() => flash.remove(), 300);
+      const flash = document.createElement('div'); flash.className = 'life-loss-effect';
+      wrapper.appendChild(flash); setTimeout(() => flash.remove(), 300);
     }
 
     function drawBasket(x,y) {
-      if (cestaLoaded) ctx.drawImage(cestaImg, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH);
+      if(cestaLoaded) ctx.drawImage(cestaImg, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH);
       else { ctx.fillStyle='#D4A373'; ctx.fillRect(x-basketW/2, y-basketH/2, basketW, basketH); }
     }
+
     function draw() {
       ctx.clearRect(0,0,canvas.width,canvas.height);
       const g = ctx.createLinearGradient(0,0,0,canvas.height); g.addColorStop(0,'#87CEEB'); g.addColorStop(1,'#E0F7FA');
       ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
-      if (gameMode!=='1p' && gameState!=='gameOver') {
+      
+      if(gameMode!=='1p' && gameState!=='gameOver') {
         ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=3; ctx.setLineDash([8,6]);
         ctx.beginPath(); ctx.moveTo(canvas.width/2,0); ctx.lineTo(canvas.width/2,canvas.height-180); ctx.stroke(); ctx.setLineDash([]);
       }
       const bY = canvas.height-180;
-      if (gameMode==='1p') drawBasket(basket1X,bY); else { drawBasket(basket1X,bY); drawBasket(basket2X,bY); }
+      if(gameMode==='1p') drawBasket(basket1X,bY); else { drawBasket(basket1X,bY); drawBasket(basket2X,bY); }
+      
       ctx.font='34px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      for (let e of emojis) { ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); ctx.fillText(e.emoji,0,0); ctx.restore(); }
-      if (gameState!=='gameOver') {
+      for(let e of emojis) { ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); ctx.fillText(e.emoji,0,0); ctx.restore(); }
+      
+      if(gameState!=='gameOver') {
         ctx.fillStyle='#1D3557'; ctx.font='bold 16px Arial';
-        if (gameMode==='1p') { ctx.fillText(`👤 ${p1Name}: ${sharedScore}`,canvas.width/2,25); ctx.fillText('❤️'.repeat(sharedLives),canvas.width/2,48); }
-        else if (gameMode==='2p-coop') { ctx.fillText(`🤝 Equipo: ${sharedScore}`,canvas.width/2,25); ctx.fillText('❤️'.repeat(sharedLives),canvas.width/2,48); }
+        if(gameMode==='1p') { ctx.fillText(`👤 ${p1Name}: ${sharedScore}`,canvas.width/2,25); ctx.fillText('❤️'.repeat(sharedLives),canvas.width/2,48); }
+        else if(gameMode==='2p-coop') { ctx.fillText(`🤝 Equipo: ${sharedScore}`,canvas.width/2,25); ctx.fillText('❤️'.repeat(sharedLives),canvas.width/2,48); }
         else { ctx.textAlign='left'; ctx.fillText(`${p1Name}: ${score1}`,10,25); ctx.fillText('❤️'.repeat(lives1),10,45);
-          ctx.textAlign='right'; ctx.fillText(`${p2Name}: ${score2}`,canvas.width-10,25); ctx.fillText('❤️'.repeat(lives2),canvas.width-10,45); }
-        ctx.textAlign='center'; ctx.fillStyle='#E9C46A'; ctx.font='bold 20px Arial'; ctx.fillText(`Nivel ${level}`,canvas.width/2,75);
+               ctx.textAlign='right'; ctx.fillText(`${p2Name}: ${score2}`,canvas.width-10,25); ctx.fillText('❤️'.repeat(lives2),canvas.width-10,45); }
+        ctx.textAlign='center'; ctx.fillStyle='#E9C46A'; ctx.font='bold 20px Arial'; 
+        ctx.fillText(`Nivel ${level}`, canvas.width/2, 75);
+        ctx.fillStyle='#aaa'; ctx.font='14px Arial';
+        ctx.fillText(difficulties[selectedDifficulty].label, canvas.width/2, 95);
       }
-      if (gameState!=='gameOver') {
+      
+      if(gameState!=='gameOver') {
         const rem=Math.max(0,targetPerLevel-collectedInLevel), cY=canvas.height-110, boxW=80, boxH=80;
         ctx.fillStyle='rgba(20,30,50,0.6)';
-        if (gameMode==='1p'||gameMode==='2p-coop') { ctx.fillRect(canvas.width/2-boxW/2,cY,boxW,boxH); ctx.fillStyle='#FFF'; ctx.font='bold 50px Arial'; ctx.fillText(rem,canvas.width/2,cY+boxH/2); }
+        if(gameMode==='1p'||gameMode==='2p-coop') { ctx.fillRect(canvas.width/2-boxW/2,cY,boxW,boxH); ctx.fillStyle='#FFF'; ctx.font='bold 50px Arial'; ctx.fillText(rem,canvas.width/2,cY+boxH/2); }
         else { ctx.fillRect(canvas.width*0.25-boxW/2,cY,boxW,boxH); ctx.fillRect(canvas.width*0.75-boxW/2,cY,boxW,boxH);
-          ctx.fillStyle='#FFF'; ctx.font='bold 45px Arial'; ctx.fillText(rem,canvas.width*0.25,cY+boxH/2); ctx.fillText(rem,canvas.width*0.75,cY+boxH/2); }
+               ctx.fillStyle='#FFF'; ctx.font='bold 45px Arial'; ctx.fillText(rem,canvas.width*0.25,cY+boxH/2); ctx.fillText(rem,canvas.width*0.75,cY+boxH/2); }
       }
-      if (gameState==='levelConfirm') {
+      
+      if(gameState==='levelConfirm') {
         ctx.fillStyle='rgba(0,0,0,0.75)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle='#4CAF50'; ctx.font='bold 28px Arial'; ctx.textAlign='center'; ctx.fillText('¡Nivel Completado! 🎉',canvas.width/2,canvas.height/2-100);
-        const imgSize=120, imgY=canvas.height/2-50;
-        if (currentNaiaImg && currentNaiaImg.complete && currentNaiaImg.naturalWidth>0) ctx.drawImage(currentNaiaImg,canvas.width/2-imgSize/2,imgY,imgSize,imgSize);
-        else { ctx.fillStyle='#FFD166'; ctx.font='80px Arial'; ctx.fillText('🎮',canvas.width/2,imgY+60); }
-        ctx.fillStyle='#E0E0E0'; ctx.font='18px Arial'; ctx.fillText('🎯 Atrapa 15 emojis para pasar de nivel',canvas.width/2,imgY+imgSize+40);
-        const bw=200, bh=50, btnY=imgY+imgSize+75;
+        ctx.fillStyle='#4CAF50'; ctx.font='bold 28px Arial'; ctx.textAlign='center'; ctx.fillText('¡Nivel Completado! 🎉',canvas.width/2,canvas.height/2-90);
+        
+        // 🖼️ IMAGEN 108x120
+        const imgW=108, imgH=120, imgY=canvas.height/2-40;
+        if(currentNaiaImg && currentNaiaImg.complete && currentNaiaImg.naturalWidth>0) ctx.drawImage(currentNaiaImg,canvas.width/2-imgW/2,imgY,imgW,imgH);
+        else { ctx.fillStyle='#FFD166'; ctx.font='60px Arial'; ctx.fillText('🎮',canvas.width/2,imgY+50); }
+        
+        ctx.fillStyle='#E0E0E0'; ctx.font='18px Arial'; ctx.fillText('🎯 Atrapa 15 emojis para pasar de nivel',canvas.width/2,imgY+imgH+35);
+        const bw=200, bh=50, btnY=imgY+imgH+70;
         confirmBtnRect={x:canvas.width/2-bw/2, y:btnY, w:bw, h:bh};
         ctx.fillStyle='#E9C46A'; ctx.beginPath(); ctx.roundRect(confirmBtnRect.x,confirmBtnRect.y,confirmBtnRect.w,confirmBtnRect.h,12); ctx.fill();
         ctx.fillStyle='#1A1A2E'; ctx.font='bold 20px Arial'; ctx.fillText('▶ Siguiente Nivel',canvas.width/2,btnY+bh/2+2);
       }
-      if (gameState==='gameOver') {
+      
+      if(gameState==='gameOver') {
         ctx.fillStyle='rgba(0,0,0,0.85)'; ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle='#EF476F'; ctx.font='bold 34px Arial'; ctx.textAlign='center'; ctx.fillText('¡Fin de la Partida!',canvas.width/2,canvas.height/2-50);
         ctx.fillStyle='#FFF'; ctx.font='20px Arial';
-        if (gameMode==='1p') ctx.fillText(`Puntuación: ${sharedScore}`,canvas.width/2,canvas.height/2);
-        else if (gameMode==='2p-coop') ctx.fillText(`Equipo: ${sharedScore}`,canvas.width/2,canvas.height/2);
+        if(gameMode==='1p') ctx.fillText(`Puntuación: ${sharedScore}`,canvas.width/2,canvas.height/2);
+        else if(gameMode==='2p-coop') ctx.fillText(`Equipo: ${sharedScore}`,canvas.width/2,canvas.height/2);
         else { const w=score1>score2?`¡Gana ${p1Name}! 🏆`:score2>score1?`¡Gana ${p2Name}! 🏆`:'¡Empate! 🤝'; ctx.fillText(w,canvas.width/2,canvas.height/2-10); ctx.fillText(`${p1Name}: ${score1} | ${p2Name}: ${score2}`,canvas.width/2,canvas.height/2+25); }
         const rw=180,rh=45; confirmBtnRect={x:canvas.width/2-rw/2,y:canvas.height/2+60,w:rw,h:rh};
         ctx.fillStyle='#2A9D8F'; ctx.beginPath(); ctx.roundRect(confirmBtnRect.x,confirmBtnRect.y,confirmBtnRect.w,confirmBtnRect.h,10); ctx.fill();
         ctx.fillStyle='#FFF'; ctx.font='bold 18px Arial'; ctx.fillText('Volver al Menú',canvas.width/2,confirmBtnRect.y+rh/2+2);
       }
     }
+
     window.addEventListener('keydown', e=>keys[e.key]=true);
     window.addEventListener('keyup', e=>keys[e.key]=false);
+    
     function handleInput(e) {
       e.preventDefault();
-      if (gameState==='levelConfirm'||gameState==='gameOver') {
+      if(gameState==='levelConfirm'||gameState==='gameOver') {
         const rect=wrapper.getBoundingClientRect(), scX=canvas.width/rect.width, scY=canvas.height/rect.height;
         let cx,cy;
         if(e.type.includes('touch')){cx=(e.touches[0].clientX-rect.left)*scX; cy=(e.touches[0].clientY-rect.top)*scY;}
         else{cx=(e.clientX-rect.left)*scX; cy=(e.clientY-rect.top)*scY;}
         if(confirmBtnRect && cx>=confirmBtnRect.x && cx<=confirmBtnRect.x+confirmBtnRect.w && cy>=confirmBtnRect.y && cy<=confirmBtnRect.y+confirmBtnRect.h){
-          playSound('click');
-          if(gameState==='levelConfirm') nextLevel(); else showMenu();
+          playSound('click'); if(gameState==='levelConfirm') nextLevel(); else showMenu();
         } return;
       }
       if(gameState==='playing'){
@@ -355,11 +325,15 @@
     canvas.addEventListener('touchstart', handleInput, {passive:false});
     canvas.addEventListener('touchmove', handleInput, {passive:false});
     canvas.addEventListener('mousedown', handleInput);
+
     function nextLevel() {
       playSound('level'); level++; collectedInLevel=0;
-      fallSpeed=1.2+(level-1)*0.035; spawnInterval=Math.max(50,90-(level-1)*1.5);
+      const diff = difficulties[selectedDifficulty];
+      fallSpeed += diff.speedInc;
+      spawnInterval = Math.max(40, spawnInterval - diff.spawnDec);
       emojis=[]; gameState='playing';
     }
+
     function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
     showMenu(); gameLoop();
   </script>

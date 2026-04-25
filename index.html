@@ -44,9 +44,14 @@
     const ui = document.getElementById('ui');
     const wrapper = document.getElementById('gameWrapper');
 
+    // 🧺 IMÁGENES DE CESTAS
     const cestaImg = new Image(); cestaImg.src = 'naia-cesta.png';
     let cestaLoaded = false;
     cestaImg.onload = () => cestaLoaded = true;
+
+    const alexImg = new Image(); alexImg.src = 'alex.png';
+    let alexLoaded = false;
+    alexImg.onload = () => alexLoaded = true;
 
     const naiaImages = [];
     ['naia1.png','naia2.png','naia3.png','naia4.png','naia5.png','naia6.png','naia7.png','naia8.png'].forEach((n,i) => { const im = new Image(); im.src = n; naiaImages[i] = im; });
@@ -84,14 +89,14 @@
     let level = 1, collectedInLevel = 0, targetPerLevel = 15;
     let gameState = 'menu', fallSpeed = 1.2, spawnInterval = 90, confirmBtnRect = null;
 
-    // 🛡️ LISTA COMPATIBLE: Eliminados emojis que dan cuadrado negro en algunos dispositivos
+    // 🛡️ LISTA EXACTA APROBADA (SIN CUADRADOS NEGROS) + BLINDAJE
     const yellowEmojis = [
-      '🥰','😍','😘','🤣','😀','😅','😊','😗','😚','🤗','😑','😣','🤐','😫','😌','😝','😓',
-      '🤑','🙁','😟','😭','😨','😬','😱','😳','🤒','🤮','🥳','🥹','🤥','🫢',
-      '🤓','🧐','🤫','🤭','🥺','😇','🤧','🤕','😷','😠','🥴','🤪','😵','😩',
-      '🤯','😧','😦','😤','😢','😞','😖','😲','☹️','🙃','😔','😕','😒','🤤','😛','😜','😴',
-      '🥱','😯','😪','😮','😥','🙄','😏','😶','🤨','😐','🤔','🤩'
-    ].filter(e => e && e.trim().length > 0); // 🔒 BLINDAJE: Elimina huecos vacíos automáticamente
+      '🥰','😍','😘','','😀','😅','😊','😗','😚','🤗','','😣','🤐','😫','😌','😝','😓',
+      '🤑','🙁','😟','😭','😨','😬','😱','😳','','🤮','','🥹','','🫢',
+      '🤓','🧐','🤫','🤭','🥺','😇','🤧','🤕','😷','😠','','🤪','😵','😩',
+      '🤯','','😦','😤','😢','😞','😖','😲','☹️','🙃','😔','😕','😒','🤤','😛','😜','😴',
+      '🥱','😯','😪','😮','😥','🙄','😏','😶','🤨','','🤔',''
+    ].filter(e => e && e.trim().length > 0);
 
     function resize() {
       const ratio = 9/16;
@@ -206,7 +211,7 @@
         if(e.y >= b1.c - e.r && e.y <= b1.c + basketH/2) {
           if(gameMode==='1p' && e.x>b1.l && e.x<b1.r) { sharedScore++; caught=true; }
           else if(gameMode==='2p-coop' && ((e.x>b1.l&&e.x<b1.r)||(e.x>b2.l&&e.x<b2.r))) { sharedScore++; caught=true; }
-          else if(gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x<b1.r)||(e.side===2&&e.x>b2.l&&e.x<b2.r))) {
+          else if(gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x>b2.r)||(e.side===2&&e.x>b2.l&&e.x<b2.r))) {
             if(e.side===1) score1++; else score2++; caught=true;
           }
         }
@@ -229,8 +234,9 @@
       wrapper.appendChild(flash); setTimeout(() => flash.remove(), 300);
     }
 
-    function drawBasket(x,y) {
-      if(cestaLoaded) ctx.drawImage(cestaImg, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH);
+    // 🎨 DIBUJADO CON SOPORTE PARA SEGUNDA IMAGEN
+    function drawBasket(x, y, imgRef) {
+      if(imgRef && imgRef.complete) ctx.drawImage(imgRef, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH);
       else { ctx.fillStyle='#D4A373'; ctx.fillRect(x-basketW/2, y-basketH/2, basketW, basketH); }
     }
 
@@ -244,7 +250,12 @@
         ctx.beginPath(); ctx.moveTo(canvas.width/2,0); ctx.lineTo(canvas.width/2,canvas.height-180); ctx.stroke(); ctx.setLineDash([]);
       }
       const bY = canvas.height-180;
-      if(gameMode==='1p') drawBasket(basket1X,bY); else { drawBasket(basket1X,bY); drawBasket(basket2X,bY); }
+      // ✅ NAIA (J1) Y ALEX (J2)
+      if(gameMode==='1p') drawBasket(basket1X, bY, cestaImg);
+      else {
+        drawBasket(basket1X, bY, cestaImg);
+        drawBasket(basket2X, bY, alexImg);
+      }
       
       ctx.font='34px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
       for(let e of emojis) { ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); ctx.fillText(e.emoji,0,0); ctx.restore(); }

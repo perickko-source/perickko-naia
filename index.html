@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>ATRAPA EMOJIS CON NAIA</title>
   
-  <!-- 🎨 FAVICON Y CONFIGURACIÓN MÓVIL -->
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
   <link rel="apple-touch-icon" href="favicon.png">
   <meta name="theme-color" content="#1a1a2e">
@@ -41,29 +40,13 @@
     .life-loss-effect { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 0, 0, 0.3); pointer-events: none; animation: flashRed 0.3s ease-out; z-index: 20; }
     @keyframes flashRed { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-    /* 💬 ESTILO PARA MENSAJES MOTIVACIONALES (POP-UP CSS) */
     #motivation-box {
-      position: absolute;
-      top: 16%;
-      width: 100%;
-      text-align: center;
-      font-size: 32px;
-      font-weight: 900;
-      color: #FFD700; /* Dorado brillante */
-      text-shadow: 
-        0 4px 8px rgba(0,0,0,0.8), 
-        0 0 15px rgba(255, 215, 0, 0.4);
-      pointer-events: none; /* Click a través del texto */
-      z-index: 5;
-      opacity: 0;
-      transform: scale(0.5);
+      position: absolute; top: 16%; width: 100%; text-align: center;
+      font-size: 32px; font-weight: 900; color: #FFD700;
+      text-shadow: 0 4px 8px rgba(0,0,0,0.8), 0 0 15px rgba(255, 215, 0, 0.4);
+      pointer-events: none; z-index: 5; opacity: 0; transform: scale(0.5);
     }
-
-    /* Clase que activa la animación Pop-up */
-    .pop-animation {
-      animation: popUpAnim 1.2s ease-out forwards;
-    }
-
+    .pop-animation { animation: popUpAnim 1.2s ease-out forwards; }
     @keyframes popUpAnim {
       0% { opacity: 0; transform: scale(0.5) translateY(20px); }
       30% { opacity: 1; transform: scale(1.2) translateY(0); }
@@ -77,7 +60,6 @@
 <body>
   <div id="gameWrapper">
     <canvas id="gameCanvas"></canvas>
-    <!-- Elemento para mensajes flotantes -->
     <div id="motivation-box"></div>
     <div id="ui"></div>
   </div>
@@ -87,61 +69,34 @@
     const ctx = canvas.getContext('2d');
     const ui = document.getElementById('ui');
     const wrapper = document.getElementById('gameWrapper');
-    const msgBox = document.getElementById('motivation-box'); // Referencia al div de mensajes
+    const msgBox = document.getElementById('motivation-box');
 
-    // 🧺 IMÁGENES DE CESTAS
     const cestaImg = new Image(); cestaImg.src = 'naia-cesta.png';
-    let cestaLoaded = false;
-    cestaImg.onload = () => cestaLoaded = true;
-
+    let cestaLoaded = false; cestaImg.onload = () => cestaLoaded = true;
     const alexImg = new Image(); alexImg.src = 'alex.png';
-    let alexLoaded = false;
-    alexImg.onload = () => alexLoaded = true;
-
-    // 🖼️ PORTADA (PANTALLA DE INICIO)
+    let alexLoaded = false; alexImg.onload = () => alexLoaded = true;
     const portadaImg = new Image(); portadaImg.src = 'portada.png';
-
-    // 🎨 SPRITE SHEET DE EMOJIS
     const spriteImg = new Image(); spriteImg.src = 'emojis-sprite.png';
     let spriteLoaded = false;
     const TOTAL_EMOJIS = 20;
     let emojiW = 0, emojiH = 0;
-    spriteImg.onload = () => {
-      spriteLoaded = true;
-      emojiW = spriteImg.width / TOTAL_EMOJIS;
-      emojiH = spriteImg.height;
-    };
+    spriteImg.onload = () => { spriteLoaded = true; emojiW = spriteImg.width / TOTAL_EMOJIS; emojiH = spriteImg.height; };
 
     const naiaImages = [];
     ['naia1.png','naia2.png','naia3.png','naia4.png','naia5.png','naia6.png','naia7.png','naia8.png'].forEach((n,i) => { const im = new Image(); im.src = n; naiaImages[i] = im; });
     let currentNaiaImg = null;
 
-    // ☁️ SISTEMA DE NUBES (VERANO)
     let clouds = [];
     function initClouds() {
       clouds = [];
-      for(let i=0; i<7; i++) {
-        clouds.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * (canvas.height * 0.5),
-          speed: 0.15 + Math.random() * 0.25,
-          scale: 0.6 + Math.random() * 0.8,
-          opacity: 0.5 + Math.random() * 0.4
-        });
-      }
+      for(let i=0; i<7; i++) clouds.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height*0.5, speed: 0.15+Math.random()*0.25, scale: 0.6+Math.random()*0.8, opacity: 0.5+Math.random()*0.4 });
     }
     function drawClouds() {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
       clouds.forEach(c => {
-        c.x += c.speed;
-        if(c.x > canvas.width + 120) c.x = -120;
+        c.x += c.speed; if(c.x > canvas.width+120) c.x = -120;
         ctx.save(); ctx.translate(c.x, c.y); ctx.scale(c.scale, c.scale);
-        ctx.beginPath();
-        ctx.arc(0, 0, 30, 0, Math.PI * 2);
-        ctx.arc(35, 5, 40, 0, Math.PI * 2);
-        ctx.arc(80, 0, 30, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+        ctx.beginPath(); ctx.arc(0,0,30,0,Math.PI*2); ctx.arc(35,5,40,0,Math.PI*2); ctx.arc(80,0,30,0,Math.PI*2); ctx.fill(); ctx.restore();
       });
     }
 
@@ -158,45 +113,29 @@
     }
     const bgMusic = new Audio('naia.ogg'); bgMusic.loop = true; bgMusic.volume = 0.3;
 
-    // 🏆 SISTEMA DE RÉCORDS (localStorage)
     const STORAGE_KEY = 'naia_emojis_highscores';
     const MAX_RECORDS = 5;
-    function getRecords() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-      catch(e) { return []; }
-    }
+    function getRecords() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; } }
     function saveRecords(records) { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
     function addRecord(name, score) {
-      const records = getRecords();
-      records.push({ name, score, date: new Date().toLocaleDateString() });
-      records.sort((a, b) => b.score - a.score);
-      const top = records.slice(0, MAX_RECORDS);
-      saveRecords(top);
-      return top;
+      const records = getRecords(); records.push({ name, score, date: new Date().toLocaleDateString() });
+      records.sort((a, b) => b.score - a.score); saveRecords(records.slice(0, MAX_RECORDS));
     }
     function renderLeaderboard() {
       const records = getRecords();
-      const container = document.getElementById('leaderboardSection');
-      if (!container) return;
+      const container = document.getElementById('leaderboardSection'); if(!container) return;
       let html = '<div style="width:90%; max-width:300px; margin:10px auto; background:rgba(255,255,255,0.05); border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,0.1);">';
       html += '<h3 style="color:#FFD166; margin:0 0 10px 0; font-size:1.1em; text-align:center;">🏆 Top Récords</h3>';
-      if (records.length === 0) {
-        html += '<p style="text-align:center; color:#aaa; font-size:0.9em;">Aún no hay récords</p>';
-      } else {
-        records.forEach((r, i) => {
-          const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-          html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:${i<records.length-1?'1px solid rgba(255,255,255,0.1)':'none'}; font-size:0.95em;">
-            <span>${medal} ${r.name}</span>
-            <span style="color:#4CAF50; font-weight:bold; font-size:1.1em;">${r.score}</span>
-          </div>`;
-        });
-      }
-      html += '</div>';
-      container.innerHTML = html;
+      if(records.length===0) html += '<p style="text-align:center; color:#aaa; font-size:0.9em;">Aún no hay récords</p>';
+      else records.forEach((r,i) => {
+        const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+        html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:${i<records.length-1?'1px solid rgba(255,255,255,0.1)':'none'}; font-size:0.95em;">
+          <span>${medal} ${r.name}</span><span style="color:#4CAF50; font-weight:bold; font-size:1.1em;">${r.score}</span></div>`;
+      });
+      html += '</div>'; container.innerHTML = html;
     }
 
     let selectedDifficulty = 'easy';
-    // 🔄 CURVA DE DIFICULTAD CON OBJETIVOS DINÁMICOS VERIFICADOS
     const difficulties = {
       easy:       { fallSpeed: 1.2, spawnInterval: 90, lives1p: 7, lives2p: 5, speedInc: 0.035, spawnDec: 1.5, label: '🟢 Fácil', target: 15 },
       semi:       { fallSpeed: 3.0, spawnInterval: 75, lives1p: 6, lives2p: 4, speedInc: 0.08, spawnDec: 2.0, label: '🔵 Semi', target: 20 },
@@ -217,23 +156,24 @@
     let gameState = 'menu', fallSpeed = 1.2, spawnInterval = 90, confirmBtnRect = null;
     let shakeIntensity = 0;
 
-    // 🧲 SISTEMA IMÁN
-    let magnetActive = false;
-    let magnetTimer = 0;
-    const MAGNET_DURATION = 360; // 6 segundos a 60fps
-    const MAGNET_RANGE = 380;
-    const MAGNET_FORCE = 6.5;
+    let magnetActive = false, magnetTimer = 0;
+    const MAGNET_DURATION = 360, MAGNET_RANGE = 380, MAGNET_FORCE = 6.5;
 
-    // 💬 FRASES MOTIVACIONALES
-    const phrases = ["¡Genial!", "¡Sigue así!", "¡Imparable!", "¡Brutal!", "¡Qué reflejos!", "¡A por todas!", "¡Tú puedes!", "¡No pares!"];
-    const allowedMsgModes = ['semi', 'pro', 'expert']; // Modos donde aparecen mensajes
+    // 💬 FRASES BASE + EXCLUSIVAS EXPERTO
+    const basePhrases = ["¡Genial!", "¡Sigue así!", "¡Imparable!", "¡Brutal!", "¡Qué reflejos!", "¡A por todas!", "¡Tú puedes!", "¡No pares!"];
+    const expertPhrases = ["¡Máquina!", "¡Dale caña!", "¡A tope!", "¡Salvaje!", "¡Furia total!", "¡Bah, eso no es na!", "¡Implacable!", "¡Que clase!", "¡Que maestria!", "¡Reflejos de Ninja!", "¡Legendario!", "¡Inigualable!"];
+    const allowedMsgModes = ['semi', 'pro', 'expert'];
     let msgTimeout = null;
+
+    function getActivePhrases() {
+      return selectedDifficulty === 'expert' ? [...basePhrases, ...expertPhrases] : basePhrases;
+    }
 
     function resize() {
       const ratio = 9/16;
       const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
       const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      if (vw/vh < ratio) { wrapper.style.width = vw+'px'; wrapper.style.height = (vw/ratio)+'px'; canvas.width=vw; canvas.height=vw/ratio; }
+      if(vw/vh < ratio) { wrapper.style.width = vw+'px'; wrapper.style.height = (vw/ratio)+'px'; canvas.width=vw; canvas.height=vw/ratio; }
       else { wrapper.style.height = vh+'px'; wrapper.style.width = (vh*ratio)+'px'; canvas.height=vh; canvas.width=vh*ratio; }
       basket1X = canvas.width*0.25; basket2X = canvas.width*0.75;
       initClouds();
@@ -242,88 +182,47 @@
     window.addEventListener('resize', resize);
     if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 
-    // 💬 FUNCIÓN PARA MOSTRAR MENSAJE (POKE CSS)
     function showMotivationMsg() {
-      if (gameState !== 'playing') return;
-
-      // Elegir frase al azar
-      const text = phrases[Math.floor(Math.random() * phrases.length)];
+      if(gameState !== 'playing') return;
+      const activePhrases = getActivePhrases();
+      const text = activePhrases[Math.floor(Math.random() * activePhrases.length)];
       msgBox.innerText = text;
-
-      // Reiniciar animación (truco CSS para reiniciar keyframes)
       msgBox.classList.remove('pop-animation');
-      void msgBox.offsetWidth; // Forzar reflow
+      void msgBox.offsetWidth;
       msgBox.classList.add('pop-animation');
-
-      // Programar siguiente mensaje (Tiempo aleatorio entre 5s y 12s)
       scheduleNextMessage();
     }
 
     function scheduleNextMessage() {
-      if (msgTimeout) clearTimeout(msgTimeout);
-      
-      // Solo programar si estamos en un modo permitido
-      if (allowedMsgModes.includes(selectedDifficulty) && gameState === 'playing') {
-        const delay = 5000 + Math.random() * 7000; // 5000ms a 12000ms
+      if(msgTimeout) clearTimeout(msgTimeout);
+      if(allowedMsgModes.includes(selectedDifficulty) && gameState === 'playing') {
+        const delay = 5000 + Math.random() * 7000;
         msgTimeout = setTimeout(showMotivationMsg, delay);
       }
     }
 
-    // 🖼️ LÓGICA DE PANTALLA DE CARGA (SPLASH SCREEN)
     function showSplashScreen() {
       const splash = document.createElement('div');
       splash.id = 'splash-screen';
-      splash.style.cssText = `
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: #1a1a2e url('portada.png') no-repeat center center;
-        background-size: cover;
-        display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
-        padding-bottom: 12vh; z-index: 200; transition: opacity 1s ease;
-      `;
-      
+      splash.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:#1a1a2e url('portada.png') no-repeat center center;background-size:cover;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:12vh;z-index:200;transition:opacity 1s ease;`;
       const loaderText = document.createElement('div');
       loaderText.innerText = 'CARGANDO...';
-      loaderText.style.cssText = `
-        color: #FFD166; font-family: sans-serif; font-weight: bold; font-size: 1.2em;
-        margin-bottom: 10px; text-shadow: 2px 2px 4px #000; letter-spacing: 2px;
-      `;
-
+      loaderText.style.cssText = `color:#FFD166;font-family:sans-serif;font-weight:bold;font-size:1.2em;margin-bottom:10px;text-shadow:2px 2px 4px #000;letter-spacing:2px;`;
       const barBg = document.createElement('div');
-      barBg.style.cssText = `
-        width: 80%; max-width: 300px; height: 8px; background: rgba(255,255,255,0.2);
-        border-radius: 4px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-      `;
-
+      barBg.style.cssText = `width:80%;max-width:300px;height:8px;background:rgba(255,255,255,0.2);border-radius:4px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,0.5);`;
       const bar = document.createElement('div');
-      bar.style.cssText = `
-        width: 0%; height: 100%; background: #FFD166; border-radius: 4px;
-        transition: width 10s linear;
-      `;
-
-      barBg.appendChild(bar);
-      splash.appendChild(loaderText);
-      splash.appendChild(barBg);
-      wrapper.appendChild(splash);
-
+      bar.style.cssText = `width:0%;height:100%;background:#FFD166;border-radius:4px;transition:width 10s linear;`;
+      barBg.appendChild(bar); splash.appendChild(loaderText); splash.appendChild(barBg); wrapper.appendChild(splash);
       const startLoading = () => {
         requestAnimationFrame(() => { bar.style.width = '100%'; });
-        setTimeout(() => {
-          splash.style.opacity = '0';
-          setTimeout(() => { splash.remove(); showMenu(); }, 1000);
-        }, 10000);
+        setTimeout(() => { splash.style.opacity = '0'; setTimeout(() => { splash.remove(); showMenu(); }, 1000); }, 10000);
       };
-
-      if (portadaImg.complete) startLoading();
-      else portadaImg.onload = startLoading;
+      if(portadaImg.complete) startLoading(); else portadaImg.onload = startLoading;
     }
 
     function showMenu() {
-      bgMusic.playbackRate = 1.0;
-      gameState = 'menu'; started = false;
-      if (msgTimeout) clearTimeout(msgTimeout); // Parar mensajes al salir
-      msgBox.classList.remove('pop-animation'); // Limpiar texto si quedó
-      msgBox.innerText = '';
-
+      bgMusic.playbackRate = 1.0; gameState = 'menu'; started = false;
+      if(msgTimeout) clearTimeout(msgTimeout); msgBox.classList.remove('pop-animation'); msgBox.innerText = '';
       ui.classList.remove('hidden');
       ui.innerHTML = `
         <h1>ATRAPA EMOJIS<br>CON NAIA</h1>
@@ -331,45 +230,27 @@
         <button class="btn btn-mode" onclick="showNameInput('1p')">👤 1 Jugador</button>
         <button class="btn btn-mode" onclick="showNameInput('2p-coop')">🤝 2 Jugadores Cooperativo</button>
         <button class="btn btn-mode" onclick="showNameInput('2p-vs')">⚔️ 2 Jugadores Competitivo</button>
-        <button class="btn btn-opt" onclick="showDifficultyMenu()">⚙️ Cambiar Dificultad</button>
-      `;
+        <button class="btn btn-opt" onclick="showDifficultyMenu()">⚙️ Cambiar Dificultad</button>`;
     }
 
     function showDifficultyMenu() {
       playSound('click');
-      let btns = '';
-      for(let k in difficulties) {
-        btns += `<button class="btn diff-btn diff-${k}" onclick="setDifficulty('${k}')">${difficulties[k].label}</button>`;
-      }
-      ui.innerHTML = `
-        <h2>Selecciona Dificultad</h2>
-        <div style="display:flex; flex-direction:column; align-items:center; width:100%;">${btns}</div>
-        <button class="btn btn-opt" style="margin-top:20px;" onclick="showMenu()">⬅️ Volver</button>
-      `;
+      let btns = ''; for(let k in difficulties) btns += `<button class="btn diff-btn diff-${k}" onclick="setDifficulty('${k}')">${difficulties[k].label}</button>`;
+      ui.innerHTML = `<h2>Selecciona Dificultad</h2><div style="display:flex;flex-direction:column;align-items:center;width:100%;">${btns}</div><button class="btn btn-opt" style="margin-top:20px;" onclick="showMenu()">⬅️ Volver</button>`;
     }
+    window.setDifficulty = function(mode) { selectedDifficulty = mode; playSound('click'); showMenu(); };
 
-    window.setDifficulty = function(mode) {
-      selectedDifficulty = mode;
-      playSound('click');
-      showMenu();
-    };
-
-    // ✅ TEXTO DINÁMICO VERIFICADO (15/20/30/40/50)
     window.showNameInput = function(mode) {
       playSound('click'); gameMode = mode; gameState = 'nameInput';
       const is2p = mode.includes('2p');
       const targetCount = difficulties[selectedDifficulty].target || 15;
-      const instructionText = selectedDifficulty === 'extreme' 
-         ? "💀 ¡Modo Extremo! Sobrevive y atrapa sin parar" 
-         : `🎯 Atrapa ${targetCount} emojis para pasar de nivel`;
-         
+      const instructionText = selectedDifficulty === 'extreme' ? "💀 ¡Modo Extremo! Sobrevive y atrapa sin parar" : `🎯 Atrapa ${targetCount} emojis para pasar de nivel`;
       ui.innerHTML = `
         <h1>👥 Nombres</h1>
         <div class="input-group"><label>Nombre Jugador 1</label><input type="text" id="name1" value="${p1Name}" maxlength="10"></div>
         ${is2p ? `<div class="input-group"><label>Nombre Jugador 2</label><input type="text" id="name2" value="${p2Name}" maxlength="10"></div>` : ''}
         <button class="btn btn-start" id="startGameBtn">¡EMPEZAR!</button>
-        <p style="color:#FFD166; margin-top:12px; font-size:0.95em; font-weight:bold;">${instructionText}</p>
-      `;
+        <p style="color:#FFD166; margin-top:12px; font-size:0.95em; font-weight:bold;">${instructionText}</p>`;
       document.getElementById('startGameBtn').onclick = () => {
         p1Name = document.getElementById('name1').value.trim() || 'Jugador 1';
         if(is2p) p2Name = document.getElementById('name2').value.trim() || 'Jugador 2';
@@ -383,35 +264,24 @@
       gameOver = false; started = true; gameState = 'playing';
       emojis = []; particles = []; floatingTexts = []; fallingPowerups = []; frameCount = 0; keys = {};
       fallSpeed = diff.fallSpeed; spawnInterval = diff.spawnInterval; shakeIntensity = 0;
-      targetPerLevel = diff.target || 15; 
-      magnetActive = false; magnetTimer = 0;
-      
+      targetPerLevel = diff.target || 15; magnetActive = false; magnetTimer = 0;
       bgMusic.playbackRate = diff.musicRate || 1.0;
-      
       if(gameMode === '1p') { sharedLives = diff.lives1p; basket1X = canvas.width/2; }
       else { lives1 = lives2 = diff.lives2p; sharedLives = diff.lives1p; basket1X = canvas.width*0.25; basket2X = canvas.width*0.75; }
-      
       bgMusic.play().catch(()=>{}); ui.classList.add('hidden');
-      
-      // 💬 Iniciar mensajes si el modo lo permite
-      if (allowedMsgModes.includes(selectedDifficulty)) {
-        scheduleNextMessage();
-      }
+      if(allowedMsgModes.includes(selectedDifficulty)) scheduleNextMessage();
     }
 
     function spawnEmoji() {
-      // 🧲 SPAWN IMÁN (SOLO IMPOSIBLE)
       if(selectedDifficulty === 'impossible' && Math.random() < 0.025) {
-        let x = Math.random() * (canvas.width * 0.8) + canvas.width * 0.1;
-        fallingPowerups.push({x, y:-30, vy: fallSpeed * 0.7, type: 'magnet', r: 24});
-        return;
+        let x = Math.random()*(canvas.width*0.8)+canvas.width*0.1;
+        fallingPowerups.push({x, y:-30, vy: fallSpeed*0.7, type: 'magnet', r: 24}); return;
       }
-
-      const emojiIdx = Math.floor(Math.random() * TOTAL_EMOJIS);
+      const emojiIdx = Math.floor(Math.random()*TOTAL_EMOJIS);
       let x, vy, side;
       if(selectedDifficulty === 'extreme') {
-        x = Math.random() * (canvas.width * 0.9) + (canvas.width * 0.05);
-        vy = fallSpeed + (Math.random() * 4);
+        x = Math.random()*(canvas.width*0.9)+canvas.width*0.05;
+        vy = fallSpeed + Math.random()*4;
         if(Math.random() < 0.3) spawnEmoji();
       } else {
         if(gameMode === '1p') { x = Math.random()*(canvas.width*0.6)+canvas.width*0.2; side = 1; }
@@ -421,182 +291,103 @@
       emojis.push({x, y:-30, r:20, vy, emojiIdx, rot:0, rotSpd:(Math.random()-0.5)*0.05, side: side||1});
     }
 
-    function spawnParticles(x, y, count, color) {
-      for(let i=0; i<count; i++) {
-        particles.push({ x, y, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4-2, life:1.0, color, size:Math.random()*4+2 });
-      }
-    }
-
-    function spawnFloatingText(x, y, text, color) {
-      floatingTexts.push({ x, y, vy:-1.5, text, color, life:1.0, scale:1.0 });
-    }
-
+    function spawnParticles(x, y, count, color) { for(let i=0; i<count; i++) particles.push({x, y, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4-2, life:1.0, color, size:Math.random()*4+2}); }
+    function spawnFloatingText(x, y, text, color) { floatingTexts.push({x, y, vy:-1.5, text, color, life:1.0, scale:1.0}); }
     function triggerLifeLoss() {
       const flash = document.createElement('div'); flash.className = 'life-loss-effect';
-      wrapper.appendChild(flash); setTimeout(() => flash.remove(), 300);
-      shakeIntensity = 15;
+      wrapper.appendChild(flash); setTimeout(() => flash.remove(), 300); shakeIntensity = 15;
     }
 
     function update() {
       if(gameState !== 'playing') return;
-      frameCount++;
-      if(frameCount % spawnInterval === 0) spawnEmoji();
-      
-      if(shakeIntensity > 0) {
-        shakeIntensity *= 0.9;
-        if(shakeIntensity < 0.5) shakeIntensity = 0;
-      }
-
-      // 🧲 ACTUALIZAR IMÁN
+      frameCount++; if(frameCount % spawnInterval === 0) spawnEmoji();
+      if(shakeIntensity > 0) { shakeIntensity *= 0.9; if(shakeIntensity < 0.5) shakeIntensity = 0; }
       if(magnetActive) {
-        magnetTimer--;
-        if(magnetTimer <= 0) magnetActive = false;
-        
+        magnetTimer--; if(magnetTimer <= 0) magnetActive = false;
         const targets = [{x: basket1X, y: canvas.height-180}];
         if(gameMode !== '1p') targets.push({x: basket2X, y: canvas.height-180});
-
         for(let e of emojis) {
           let closest = targets[0], minD = 1e9;
-          for(let t of targets) {
-            const d = Math.hypot(e.x-t.x, e.y-t.y);
-            if(d < minD) { minD = d; closest = t; }
-          }
-          if(minD < MAGNET_RANGE && minD > 8) {
-            e.x += ((closest.x - e.x)/minD) * MAGNET_FORCE;
-            e.y += ((closest.y - e.y)/minD) * MAGNET_FORCE;
-          }
+          for(let t of targets) { const d = Math.hypot(e.x-t.x, e.y-t.y); if(d < minD) { minD = d; closest = t; } }
+          if(minD < MAGNET_RANGE && minD > 8) { e.x += ((closest.x-e.x)/minD)*MAGNET_FORCE; e.y += ((closest.y-e.y)/minD)*MAGNET_FORCE; }
         }
       }
-
       const spd = 6;
       if(gameMode === '1p') {
-        if(keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
-        if(keys['ArrowRight']) basket1X = Math.min(canvas.width - basketW/2, basket1X + spd);
+        if(keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X-spd);
+        if(keys['ArrowRight']) basket1X = Math.min(canvas.width-basketW/2, basket1X+spd);
       } else {
-        if(keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X - spd);
-        if(keys['ArrowRight']) basket1X = Math.min(canvas.width*0.45, basket1X + spd);
-        if(keys['a']||keys['A']) basket2X = Math.max(canvas.width*0.55, basket2X - spd);
-        if(keys['d']||keys['D']) basket2X = Math.min(canvas.width - basketW/2, basket2X + spd);
+        if(keys['ArrowLeft']) basket1X = Math.max(basketW/2, basket1X-spd);
+        if(keys['ArrowRight']) basket1X = Math.min(canvas.width*0.45, basket1X+spd);
+        if(keys['a']||keys['A']) basket2X = Math.max(canvas.width*0.55, basket2X-spd);
+        if(keys['d']||keys['D']) basket2X = Math.min(canvas.width-basketW/2, basket2X+spd);
       }
-      
-      const basketBaseY = canvas.height - 180;
-      const basketVisualTop = basketBaseY + basketOffY;
-      const basketCenterY = basketVisualTop + basketH / 2 + 26;
-      const b1 = { l: basket1X - basketW/2 + basketOffX, r: basket1X + basketW/2 + basketOffX, c: basketCenterY };
-      const b2 = { l: basket2X - basketW/2 + basketOffX, r: basket2X + basketW/2 + basketOffX, c: basketCenterY };
+      const basketBaseY = canvas.height-180;
+      const basketVisualTop = basketBaseY+basketOffY;
+      const basketCenterY = basketVisualTop+basketH/2+26;
+      const b1 = { l: basket1X-basketW/2+basketOffX, r: basket1X+basketW/2+basketOffX, c: basketCenterY };
+      const b2 = { l: basket2X-basketW/2+basketOffX, r: basket2X+basketW/2+basketOffX, c: basketCenterY };
 
-      // ⚡ ACTUALIZAR POWERUPS
       for(let i=fallingPowerups.length-1; i>=0; i--) {
-        let p = fallingPowerups[i];
-        p.y += p.vy;
-        
+        let p = fallingPowerups[i]; p.y += p.vy;
         let caught = false;
-        if(p.y >= b1.c - p.r && p.y <= b1.c + basketH/2 && p.x > b1.l && p.x < b1.r) caught = true;
-        if(gameMode !== '1p' && p.y >= b2.c - p.r && p.y <= b2.c + basketH/2 && p.x > b2.l && p.x < b2.r) caught = true;
-
+        if(p.y>=b1.c-p.r && p.y<=b1.c+basketH/2 && p.x>b1.l && p.x<b1.r) caught = true;
+        if(gameMode!=='1p' && p.y>=b2.c-p.r && p.y<=b2.c+basketH/2 && p.x>b2.l && p.x<b2.r) caught = true;
         if(caught) {
-          if(p.type === 'magnet') {
-            magnetActive = true;
-            magnetTimer = MAGNET_DURATION;
-            playSound('levelup');
-          }
-          fallingPowerups.splice(i,1);
-          continue;
+          if(p.type==='magnet') { magnetActive = true; magnetTimer = MAGNET_DURATION; playSound('levelup'); }
+          fallingPowerups.splice(i,1); continue;
         }
-        if(p.y > basketVisualTop + basketH + 20) fallingPowerups.splice(i,1);
+        if(p.y > basketVisualTop+basketH+20) fallingPowerups.splice(i,1);
       }
 
-      // 🔄 EMOJIS
       for(let i=emojis.length-1; i>=0; i--) {
-        let e = emojis[i]; 
-        e.y += e.vy;
-        e.rot += e.rotSpd;
-        
+        let e = emojis[i]; e.y += e.vy; e.rot += e.rotSpd;
         let caught = false;
-        if(e.y >= b1.c - e.r && e.y <= b1.c + basketH/2) {
+        if(e.y>=b1.c-e.r && e.y<=b1.c+basketH/2) {
           if(gameMode==='1p' && e.x>b1.l && e.x<b1.r) { sharedScore++; caught=true; }
           else if(gameMode==='2p-coop' && ((e.x>b1.l&&e.x<b1.r)||(e.x>b2.l&&e.x<b2.r))) { sharedScore++; caught=true; }
-          else if(gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x<b1.r)||(e.side===2&&e.x>b2.l&&e.x<b2.r))) {
-            if(e.side===1) score1++; else score2++; caught=true;
-          }
+          else if(gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x<b1.r)||(e.side===2&&e.x>b2.l&&e.x<b2.r))) { if(e.side===1) score1++; else score2++; caught=true; }
         }
         if(caught) {
-          playSound('catch'); 
-          collectedInLevel++; 
-          emojis.splice(i,1);
-          spawnParticles(e.x, e.y, 8, '#FFD166');
-          spawnFloatingText(e.x, e.y - 20, "+1", "#FFFFFF");
-          
+          playSound('catch'); collectedInLevel++; emojis.splice(i,1);
+          spawnParticles(e.x, e.y, 8, '#FFD166'); spawnFloatingText(e.x, e.y-20, "+1", "#FFFFFF");
           if(collectedInLevel >= targetPerLevel) {
-            if(selectedDifficulty === 'extreme') {
-              level++; collectedInLevel = 0;
-              fallSpeed += 0.3;
-              spawnInterval = Math.max(10, spawnInterval - 1);
-              playSound('levelup');
-            } else {
-              gameState='levelConfirm'; 
-              currentNaiaImg=naiaImages[Math.floor(Math.random()*naiaImages.length)]; 
-              playSound('levelup');
-            }
-          }
-          continue;
+            if(selectedDifficulty === 'extreme') { level++; collectedInLevel=0; fallSpeed+=0.3; spawnInterval=Math.max(10,spawnInterval-1); playSound('levelup'); }
+            else { gameState='levelConfirm'; currentNaiaImg=naiaImages[Math.floor(Math.random()*naiaImages.length)]; playSound('levelup'); }
+          } continue;
         }
-        if(e.y - e.r > basketVisualTop + basketH + 15) {
+        if(e.y-e.r > basketVisualTop+basketH+15) {
           triggerLifeLoss();
-          if(gameMode==='1p'||gameMode==='2p-coop') { 
-            sharedLives--; 
-            if(sharedLives<=0){ gameState='gameOver'; playSound('gameover'); shakeIntensity = 0; showGameOverUI(); } 
-          } else { 
-            if(e.side===1) lives1--; else lives2--; 
-            if(lives1<=0 || lives2<=0){ gameState='gameOver'; playSound('gameover'); shakeIntensity = 0; showGameOverUI(); } 
-          }
+          if(gameMode==='1p'||gameMode==='2p-coop') { sharedLives--; if(sharedLives<=0){ gameState='gameOver'; playSound('gameover'); shakeIntensity=0; showGameOverUI(); } }
+          else { if(e.side===1) lives1--; else lives2--; if(lives1<=0||lives2<=0){ gameState='gameOver'; playSound('gameover'); shakeIntensity=0; showGameOverUI(); } }
           emojis.splice(i,1);
         }
       }
-
-      for(let i=particles.length-1; i>=0; i--) {
-        let p = particles[i];
-        p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life -= 0.03;
-        if(p.life <= 0) particles.splice(i,1);
-      }
-      for(let i=floatingTexts.length-1; i>=0; i--) {
-        let t = floatingTexts[i];
-        t.y += t.vy; t.life -= 0.02; t.scale += 0.01;
-        if(t.life <= 0) floatingTexts.splice(i,1);
-      }
+      for(let i=particles.length-1; i>=0; i--) { let p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.1; p.life-=0.03; if(p.life<=0) particles.splice(i,1); }
+      for(let i=floatingTexts.length-1; i>=0; i--) { let t=floatingTexts[i]; t.y+=t.vy; t.life-=0.02; t.scale+=0.01; if(t.life<=0) floatingTexts.splice(i,1); }
     }
 
     function showGameOverUI() {
-      if (msgTimeout) clearTimeout(msgTimeout); // Parar mensajes al morir
-      msgBox.classList.remove('pop-animation');
-      msgBox.innerText = '';
-
+      if(msgTimeout) clearTimeout(msgTimeout); msgBox.classList.remove('pop-animation'); msgBox.innerText = '';
       ui.classList.remove('hidden');
       let scoreDisplay = `Puntuación: <b>${sharedScore}</b>`;
-      if (gameMode === '2p-vs') {
-          const p1Score = score1; const p2Score = score2;
-          const winner = p1Score > p2Score ? p1Name : (p2Score > p1Score ? p2Name : 'Empate');
-          scoreDisplay = `${p1Name}: <b>${p1Score}</b> | ${p2Name}: <b>${p2Score}</b><br>Ganador: <b>${winner}</b>`;
+      if(gameMode === '2p-vs') {
+        const winner = score1>score2 ? p1Name : (score2>score1 ? p2Name : 'Empate');
+        scoreDisplay = `${p1Name}: <b>${score1}</b> | ${p2Name}: <b>${score2}</b><br>Ganador: <b>${winner}</b>`;
       }
       ui.innerHTML = `
         <h1 style="color:#EF476F; font-size:2em; margin-bottom:5px;">¡Fin de la Partida!</h1>
         <p style="font-size:1.1em; margin:10px 0; color:#FFF;">${scoreDisplay}</p>
         <div id="inputSection">
-          <div class="input-group" style="margin: 15px auto;">
-            <label>Tu Nombre</label>
-            <input type="text" id="playerNameInput" maxlength="12" placeholder="Escribe tu nombre" style="width: 85%; padding: 10px; font-size: 1em;">
-          </div>
+          <div class="input-group" style="margin:15px auto;"><label>Tu Nombre</label><input type="text" id="playerNameInput" maxlength="12" placeholder="Escribe tu nombre" style="width:85%; padding:10px; font-size:1em;"></div>
           <button class="btn btn-start" onclick="handleSaveScore()">💾 Guardar Récord</button>
         </div>
         <div id="leaderboardSection" class="hidden"></div>
-        <button class="btn btn-opt" style="margin-top:15px;" onclick="showMenu()">🔙 Volver al Menú</button>
-      `;
+        <button class="btn btn-opt" style="margin-top:15px;" onclick="showMenu()">🔙 Volver al Menú</button>`;
       renderLeaderboard();
     }
-
     window.handleSaveScore = function() {
-      const nameInput = document.getElementById('playerNameInput');
-      const name = nameInput.value.trim() || 'Anónimo';
+      const name = document.getElementById('playerNameInput').value.trim() || 'Anónimo';
       addRecord(name, sharedScore);
       document.getElementById('inputSection').classList.add('hidden');
       document.getElementById('leaderboardSection').classList.remove('hidden');
@@ -611,20 +402,11 @@
     function draw() {
       if(gameState === 'gameOver') return;
       ctx.save();
-      if(shakeIntensity > 0) {
-        const dx = (Math.random()-0.5) * shakeIntensity;
-        const dy = (Math.random()-0.5) * shakeIntensity;
-        ctx.translate(dx, dy);
-      }
+      if(shakeIntensity > 0) { ctx.translate((Math.random()-0.5)*shakeIntensity, (Math.random()-0.5)*shakeIntensity); }
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      
-      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      grad.addColorStop(0, '#87CEEB');
-      grad.addColorStop(1, '#E0F7FA');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const grad = ctx.createLinearGradient(0,0,0,canvas.height); grad.addColorStop(0,'#87CEEB'); grad.addColorStop(1,'#E0F7FA');
+      ctx.fillStyle = grad; ctx.fillRect(0,0,canvas.width,canvas.height);
       drawClouds();
-
       if(gameMode!=='1p' && gameState!=='gameOver') {
         ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=3; ctx.setLineDash([8,6]);
         ctx.beginPath(); ctx.moveTo(canvas.width/2,0); ctx.lineTo(canvas.width/2,canvas.height-180); ctx.stroke(); ctx.setLineDash([]);
@@ -632,68 +414,36 @@
       const bY = canvas.height-180;
       if(gameMode==='1p') drawBasket(basket1X, bY, cestaImg);
       else { drawBasket(basket1X, bY, cestaImg); drawBasket(basket2X, bY, alexImg); }
-      
       if(spriteLoaded && emojiW > 0) {
-        const scale = 0.50;
-        const dw = emojiW * scale; const dh = emojiH * scale;
-        for(let e of emojis) { 
-          ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); 
-          ctx.drawImage(spriteImg, e.emojiIdx * emojiW, 0, emojiW, emojiH, -dw/2, -dh/2, dw, dh);
-          ctx.restore(); 
-        }
+        const scale = 0.50, dw = emojiW*scale, dh = emojiH*scale;
+        for(let e of emojis) { ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); ctx.drawImage(spriteImg, e.emojiIdx*emojiW, 0, emojiW, emojiH, -dw/2, -dh/2, dw, dh); ctx.restore(); }
       }
-      
-      // 🧲 DIBUJAR POWERUPS
       ctx.font='34px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      for(let p of fallingPowerups) {
-        ctx.fillText(p.type === 'magnet' ? '🧲' : '❓', p.x, p.y);
-      }
-
-      for(let p of particles) {
-        ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-      }
-      ctx.globalAlpha = 1.0;
-      for(let t of floatingTexts) {
-        ctx.globalAlpha = t.life; ctx.fillStyle = t.color;
-        ctx.font = `bold ${24 * t.scale}px Arial`; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
-        ctx.strokeText(t.text, t.x, t.y); ctx.fillText(t.text, t.x, t.y);
-      }
-      ctx.globalAlpha = 1.0;
-      
-      // HUD
+      for(let p of fallingPowerups) ctx.fillText(p.type==='magnet'?'🧲':'❓', p.x, p.y);
+      for(let p of particles) { ctx.globalAlpha=p.life; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); }
+      ctx.globalAlpha=1.0;
+      for(let t of floatingTexts) { ctx.globalAlpha=t.life; ctx.fillStyle=t.color; ctx.font=`bold ${24*t.scale}px Arial`; ctx.strokeStyle='#000'; ctx.lineWidth=3; ctx.strokeText(t.text,t.x,t.y); ctx.fillText(t.text,t.x,t.y); }
+      ctx.globalAlpha=1.0;
       if(gameState!=='gameOver') {
         ctx.fillStyle='#1D3557'; ctx.font='bold 16px Arial';
         if(gameMode==='1p') { ctx.fillText(`👤 ${p1Name}: ${sharedScore}`,canvas.width/2,25); ctx.fillText('❤️'.repeat(sharedLives),canvas.width/2,48); }
         else if(gameMode==='2p-coop') { ctx.fillText(`🤝 Equipo: ${sharedScore}`,canvas.width/2,25); ctx.fillText('❤️'.repeat(sharedLives),canvas.width/2,48); }
-        else { ctx.textAlign='left'; ctx.fillText(`${p1Name}: ${score1}`,10,25); ctx.fillText('❤️'.repeat(lives1),10,45);
-               ctx.textAlign='right'; ctx.fillText(`${p2Name}: ${score2}`,canvas.width-10,25); ctx.fillText('❤️'.repeat(lives2),canvas.width-10,45); }
+        else { ctx.textAlign='left'; ctx.fillText(`${p1Name}: ${score1}`,10,25); ctx.fillText('❤️'.repeat(lives1),10,45); ctx.textAlign='right'; ctx.fillText(`${p2Name}: ${score2}`,canvas.width-10,25); ctx.fillText('❤️'.repeat(lives2),canvas.width-10,45); }
         ctx.textAlign='center'; ctx.fillStyle='#E9C46A'; ctx.font='bold 20px Arial'; ctx.fillText(`Nivel ${level}`, canvas.width/2, 75);
         ctx.fillStyle='#aaa'; ctx.font='14px Arial'; ctx.fillText(difficulties[selectedDifficulty].label, canvas.width/2, 95);
       }
-
-      // 🧲 INDICADOR IMÁN ACTIVO
       if(magnetActive) {
-        const barW = 120, barH = 14;
-        const bx = canvas.width/2 - barW/2, by = 105;
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.beginPath(); ctx.roundRect(bx-2, by-2, barW+4, barH+4, 8); ctx.fill();
-        
-        ctx.fillStyle = '#00E5FF';
-        ctx.shadowColor = '#00E5FF';
-        ctx.shadowBlur = 10;
-        ctx.beginPath(); ctx.roundRect(bx, by, (magnetTimer/MAGNET_DURATION)*barW, barH, 6); ctx.fill();
-        ctx.shadowBlur = 0;
-        
-        ctx.fillStyle = '#FFF'; ctx.font = 'bold 12px Arial';
-        ctx.fillText('🧲 ' + Math.ceil(magnetTimer/60) + 's', canvas.width/2, by + barH/2 + 1);
+        const barW=120, barH=14, bx=canvas.width/2-barW/2, by=105;
+        ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.beginPath(); ctx.roundRect(bx-2,by-2,barW+4,barH+4,8); ctx.fill();
+        ctx.fillStyle='#00E5FF'; ctx.shadowColor='#00E5FF'; ctx.shadowBlur=10;
+        ctx.beginPath(); ctx.roundRect(bx,by,(magnetTimer/MAGNET_DURATION)*barW,barH,6); ctx.fill(); ctx.shadowBlur=0;
+        ctx.fillStyle='#FFF'; ctx.font='bold 12px Arial'; ctx.fillText('🧲 '+Math.ceil(magnetTimer/60)+'s', canvas.width/2, by+barH/2+1);
       }
-
       if(gameState!=='gameOver') {
         const rem=Math.max(0,targetPerLevel-collectedInLevel), cY=canvas.height-110, boxW=80, boxH=80;
         ctx.fillStyle='rgba(20,30,50,0.6)';
         if(gameMode==='1p'||gameMode==='2p-coop') { ctx.fillRect(canvas.width/2-boxW/2,cY,boxW,boxH); ctx.fillStyle='#FFF'; ctx.font='bold 50px Arial'; ctx.fillText(rem,canvas.width/2,cY+boxH/2); }
-        else { ctx.fillRect(canvas.width*0.25-boxW/2,cY,boxW,boxH); ctx.fillRect(canvas.width*0.75-boxW/2,cY,boxW,boxH);
-               ctx.fillStyle='#FFF'; ctx.font='bold 45px Arial'; ctx.fillText(rem,canvas.width*0.25,cY+boxH/2); ctx.fillText(rem,canvas.width*0.75,cY+boxH/2); }
+        else { ctx.fillRect(canvas.width*0.25-boxW/2,cY,boxW,boxH); ctx.fillRect(canvas.width*0.75-boxW/2,cY,boxW,boxH); ctx.fillStyle='#FFF'; ctx.font='bold 45px Arial'; ctx.fillText(rem,canvas.width*0.25,cY+boxH/2); ctx.fillText(rem,canvas.width*0.75,cY+boxH/2); }
       }
       if(gameState==='levelConfirm') {
         ctx.fillStyle='rgba(0,0,0,0.75)'; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -701,10 +451,8 @@
         const imgW=108, imgH=120, imgY=canvas.height/2-40;
         if(currentNaiaImg && currentNaiaImg.complete && currentNaiaImg.naturalWidth>0) ctx.drawImage(currentNaiaImg,canvas.width/2-imgW/2,imgY,imgW,imgH);
         else { ctx.fillStyle='#FFD166'; ctx.font='60px Arial'; ctx.fillText('🎮',canvas.width/2,imgY+50); }
-        
         const targetCount = difficulties[selectedDifficulty].target || 15;
         const instructionText = selectedDifficulty === 'extreme' ? "¡Atrapa sin parar!" : `🎯 Atrapa ${targetCount} emojis para pasar de nivel`;
-        
         ctx.fillStyle='#E0E0E0'; ctx.font='18px Arial'; ctx.fillText(instructionText, canvas.width/2, imgY+imgH+35);
         const bw=200, bh=50, btnY=imgY+imgH+70;
         confirmBtnRect={x:canvas.width/2-bw/2, y:btnY, w:bw, h:bh};
@@ -743,16 +491,13 @@
     function nextLevel() {
       playSound('level'); level++; collectedInLevel=0;
       const diff = difficulties[selectedDifficulty];
-      fallSpeed += diff.speedInc;
-      spawnInterval = Math.max(30, spawnInterval - diff.spawnDec);
-      emojis=[]; fallingPowerups=[];
-      gameState='playing';
+      fallSpeed += diff.speedInc; spawnInterval = Math.max(30, spawnInterval - diff.spawnDec);
+      emojis=[]; fallingPowerups=[]; gameState='playing';
+      if(allowedMsgModes.includes(selectedDifficulty)) scheduleNextMessage(); // ✅ Reactivar mensajes
     }
 
     function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
-    initClouds();
-    showSplashScreen();
-    gameLoop();
+    initClouds(); showSplashScreen(); gameLoop();
   </script>
 </body>
 </html>

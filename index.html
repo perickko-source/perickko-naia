@@ -81,6 +81,38 @@
     ['naia1.png','naia2.png','naia3.png','naia4.png','naia5.png','naia6.png','naia7.png','naia8.png'].forEach((n,i) => { const im = new Image(); im.src = n; naiaImages[i] = im; });
     let currentNaiaImg = null;
 
+    // ☁️ SISTEMA DE NUBES (VERANO)
+    let clouds = [];
+    function initClouds() {
+      clouds = [];
+      for(let i=0; i<7; i++) {
+        clouds.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * (canvas.height * 0.5),
+          speed: 0.15 + Math.random() * 0.25,
+          scale: 0.6 + Math.random() * 0.8,
+          opacity: 0.5 + Math.random() * 0.4
+        });
+      }
+    }
+    function drawClouds() {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      clouds.forEach(c => {
+        c.x += c.speed;
+        if(c.x > canvas.width + 120) c.x = -120;
+        
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.scale(c.scale, c.scale);
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.arc(35, 5, 40, 0, Math.PI * 2);
+        ctx.arc(80, 0, 30, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
     let audioCtx;
     function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
     function playSound(t) {
@@ -159,6 +191,7 @@
       if (vw/vh < ratio) { wrapper.style.width = vw+'px'; wrapper.style.height = (vw/ratio)+'px'; canvas.width=vw; canvas.height=vw/ratio; }
       else { wrapper.style.height = vh+'px'; wrapper.style.width = (vh*ratio)+'px'; canvas.height=vh; canvas.width=vh*ratio; }
       basket1X = canvas.width*0.25; basket2X = canvas.width*0.75;
+      initClouds(); // Reposicionar nubes al redimensionar
     }
     resize();
     window.addEventListener('resize', resize);
@@ -465,9 +498,15 @@
         ctx.translate(dx, dy);
       }
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      const g = ctx.createLinearGradient(0,0,0,canvas.height); g.addColorStop(0,'#87CEEB'); g.addColorStop(1,'#E0F7FA');
-      ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
       
+      // ☀️ FONDO VERANO + NUBES (SIN SOL)
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#87CEEB');
+      grad.addColorStop(1, '#E0F7FA');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawClouds();
+
       if(gameMode!=='1p' && gameState!=='gameOver') {
         ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=3; ctx.setLineDash([8,6]);
         ctx.beginPath(); ctx.moveTo(canvas.width/2,0); ctx.lineTo(canvas.width/2,canvas.height-180); ctx.stroke(); ctx.setLineDash([]);
@@ -568,6 +607,7 @@
     function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
     
     // 🚀 INICIO DEL JUEGO CON PANTALLA DE CARGA
+    initClouds();
     showSplashScreen();
     gameLoop();
   </script>

@@ -159,14 +159,28 @@
     let magnetActive = false, magnetTimer = 0;
     const MAGNET_DURATION = 360, MAGNET_RANGE = 380, MAGNET_FORCE = 6.5;
 
-    // 💬 FRASES BASE + EXCLUSIVAS EXPERTO
+    // 💬 FRASES POR MODO
     const basePhrases = ["¡Genial!", "¡Sigue así!", "¡Imparable!", "¡Brutal!", "¡Qué reflejos!", "¡A por todas!", "¡Tú puedes!", "¡No pares!"];
     const expertPhrases = ["¡Máquina!", "¡Dale caña!", "¡A tope!", "¡Salvaje!", "¡Furia total!", "¡Bah, eso no es na!", "¡Implacable!", "¡Que clase!", "¡Que maestria!", "¡Reflejos de Ninja!", "¡Legendario!", "¡Inigualable!"];
-    const allowedMsgModes = ['semi', 'pro', 'expert'];
+    const impossiblePhrases = [
+      "¿Aún sigues?",
+      "¡Respira... si puedes!",
+      "¡Naia no perdona!",
+      "¡Cerebro en modo turbo!",
+      "¡El récord tiembla!",
+      "¿Seguro que no quieres el Fácil?",
+      "¡Bah, eso no es na!",
+      "¡Sin red de seguridad!",
+      "¡Casi, casi...!",
+      "¡Que locura!"
+    ];
+    const allowedMsgModes = ['semi', 'pro', 'expert', 'impossible'];
     let msgTimeout = null;
 
     function getActivePhrases() {
-      return selectedDifficulty === 'expert' ? [...basePhrases, ...expertPhrases] : basePhrases;
+      if (selectedDifficulty === 'impossible') return impossiblePhrases;
+      if (selectedDifficulty === 'expert') return [...basePhrases, ...expertPhrases];
+      return basePhrases;
     }
 
     function resize() {
@@ -493,7 +507,7 @@
       const diff = difficulties[selectedDifficulty];
       fallSpeed += diff.speedInc; spawnInterval = Math.max(30, spawnInterval - diff.spawnDec);
       emojis=[]; fallingPowerups=[]; gameState='playing';
-      if(allowedMsgModes.includes(selectedDifficulty)) scheduleNextMessage(); // ✅ Reactivar mensajes
+      if(allowedMsgModes.includes(selectedDifficulty)) scheduleNextMessage();
     }
 
     function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }

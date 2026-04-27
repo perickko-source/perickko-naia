@@ -55,52 +55,12 @@
       75% { transform: scale(1); opacity: 1; }
       100% { opacity: 0; transform: scale(1.1) translateY(-30px); }
     }
-
-    #break-overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(26, 26, 46, 0.85); backdrop-filter: blur(4px);
-      display: flex; justify-content: center; align-items: center;
-      opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
-      z-index: 15;
-    }
-    #break-overlay.active { opacity: 1; pointer-events: all; }
-    .break-card {
-      background: #fff; border-radius: 25px; padding: 30px 25px;
-      max-width: 380px; width: 85%; text-align: center;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-      transform: scale(0.85); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    #break-overlay.active .break-card { transform: scale(1); }
-    .break-icon { font-size: 4.5em; margin-bottom: 15px; animation: float 3s ease-in-out infinite; }
-    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-    .break-title { font-size: 1.8em; color: #764ba2; margin-bottom: 10px; font-weight: 800; }
-    .break-text { font-size: 1em; color: #555; margin-bottom: 25px; line-height: 1.5; }
-    .break-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .btn-break { padding: 12px 20px; font-size: 0.95em; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .btn-break:active { transform: scale(0.96); }
-    .btn-rest { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
-    .btn-continue { background: #f0f0f0; color: #555; }
-    .snooze-note { margin-top: 12px; font-size: 0.8em; color: #999; }
   </style>
 </head>
 <body>
   <div id="gameWrapper">
     <canvas id="gameCanvas"></canvas>
     <div id="motivation-box"></div>
-    
-    <div id="break-overlay">
-      <div class="break-card">
-        <div class="break-icon">🌸</div>
-        <div class="break-title">¿Tomamos un respiro?</div>
-        <div class="break-text">¡Llevas un buen rato atrapando emojis! 🎮<br>Es bueno estirar un poco y descansar la vista.</div>
-        <div class="break-btns">
-          <button class="btn-break btn-rest" onclick="takeBreak()">Sí, voy a descansar ✨</button>
-          <button class="btn-break btn-continue" onclick="snoozeBreak()">Seguir jugando ⏵</button>
-        </div>
-        <div class="snooze-note" id="snooze-note">Te recordaremos en 25 minutos</div>
-      </div>
-    </div>
-
     <div id="ui"></div>
   </div>
 
@@ -110,8 +70,6 @@
     const ui = document.getElementById('ui');
     const wrapper = document.getElementById('gameWrapper');
     const msgBox = document.getElementById('motivation-box');
-    const breakOverlay = document.getElementById('break-overlay');
-    const snoozeNote = document.getElementById('snooze-note');
 
     const cestaImg = new Image(); cestaImg.src = 'naia-cesta.png';
     let cestaLoaded = false; cestaImg.onload = () => cestaLoaded = true;
@@ -201,6 +159,7 @@
     let magnetActive = false, magnetTimer = 0;
     const MAGNET_DURATION = 360, MAGNET_RANGE = 380, MAGNET_FORCE = 6.5;
 
+    // 💬 FRASES POR MODO
     const basePhrases = ["¡Genial!", "¡Sigue así!", "¡Imparable!", "¡Brutal!", "¡Qué reflejos!", "¡A por todas!", "¡Tú puedes!", "¡No pares!"];
     const expertPhrases = ["¡Máquina!", "¡Dale caña!", "¡A tope!", "¡Salvaje!", "¡Furia total!", "¡Bah, eso no es na!", "¡Implacable!", "¡Que clase!", "¡Que maestria!", "¡Reflejos de Ninja!", "¡Legendario!", "¡Inigualable!"];
     const impossiblePhrases = [
@@ -210,13 +169,6 @@
     ];
     const allowedMsgModes = ['semi', 'pro', 'expert', 'impossible'];
     let msgTimeout = null;
-
-    // 🌸 TEMPORIZADOR DE DESCANSO (TIEMPOS AJUSTADOS)
-    let sessionPlayStart = 0;
-    let breakTimerActive = false;
-    let isSnoozed = false;
-    const BREAK_FIRST_DELAY = 25 * 60 * 1000; // 25 minutos
-    const BREAK_SNOOZE_DELAY = 10 * 60 * 1000; // 10 minutos
 
     function getActivePhrases() {
       if (selectedDifficulty === 'impossible') return impossiblePhrases;
@@ -256,35 +208,6 @@
       }
     }
 
-    // 🌸 LÓGICA DE DESCANSO ACTUALIZADA
-    function startBreakTimer() {
-      sessionPlayStart = Date.now();
-      breakTimerActive = true;
-      isSnoozed = false;
-      snoozeNote.innerText = "Te recordaremos en 25 minutos";
-    }
-
-    function showBreakModal() {
-      breakTimerActive = false;
-      gameState = 'break';
-      breakOverlay.classList.add('active');
-      playSound('click');
-    }
-
-    window.takeBreak = function() {
-      breakOverlay.classList.remove('active');
-      showMenu();
-    };
-
-    window.snoozeBreak = function() {
-      breakOverlay.classList.remove('active');
-      gameState = 'playing';
-      sessionPlayStart = Date.now();
-      breakTimerActive = true;
-      isSnoozed = true;
-      snoozeNote.innerText = "Te recordaremos en 10 minutos más ⏰";
-    };
-
     function showSplashScreen() {
       const splash = document.createElement('div');
       splash.id = 'splash-screen';
@@ -306,10 +229,8 @@
 
     function showMenu() {
       bgMusic.playbackRate = 1.0; gameState = 'menu'; started = false;
-      if(msgTimeout) clearTimeout(msgTimeout); 
-      breakTimerActive = false;
+      if(msgTimeout) clearTimeout(msgTimeout);
       msgBox.classList.remove('pop-animation'); msgBox.innerText = '';
-      breakOverlay.classList.remove('active');
       ui.classList.remove('hidden');
       ui.innerHTML = `
         <h1>ATRAPA EMOJIS<br>CON NAIA</h1>
@@ -357,7 +278,6 @@
       else { lives1 = lives2 = diff.lives2p; sharedLives = diff.lives1p; basket1X = canvas.width*0.25; basket2X = canvas.width*0.75; }
       bgMusic.play().catch(()=>{}); ui.classList.add('hidden');
       if(allowedMsgModes.includes(selectedDifficulty)) scheduleNextMessage();
-      startBreakTimer();
     }
 
     function spawnEmoji() {
@@ -388,14 +308,6 @@
 
     function update() {
       if(gameState !== 'playing') return;
-      
-      // 🌸 COMPROBACIÓN SEGURA DE DESCANSO
-      if(breakTimerActive) {
-        const elapsed = Date.now() - sessionPlayStart;
-        const limit = isSnoozed ? BREAK_SNOOZE_DELAY : BREAK_FIRST_DELAY;
-        if(elapsed >= limit) showBreakModal();
-      }
-
       frameCount++; if(frameCount % spawnInterval === 0) spawnEmoji();
       if(shakeIntensity > 0) { shakeIntensity *= 0.9; if(shakeIntensity < 0.5) shakeIntensity = 0; }
       if(magnetActive) {
@@ -465,9 +377,7 @@
 
     function showGameOverUI() {
       if(msgTimeout) clearTimeout(msgTimeout); 
-      breakTimerActive = false;
       msgBox.classList.remove('pop-animation'); msgBox.innerText = '';
-      breakOverlay.classList.remove('active');
       ui.classList.remove('hidden');
       let scoreDisplay = `Puntuación: <b>${sharedScore}</b>`;
       if(gameMode === '2p-vs') {

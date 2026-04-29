@@ -71,23 +71,27 @@
     const wrapper = document.getElementById('gameWrapper');
     const msgBox = document.getElementById('motivation-box');
 
+    // 🧺 CESTAS
     const cestaImg = new Image(); cestaImg.src = 'naia-cesta.png';
     let cestaLoaded = false; cestaImg.onload = () => cestaLoaded = true;
     const alexImg = new Image(); alexImg.src = 'alex.png';
     let alexLoaded = false; alexImg.onload = () => alexLoaded = true;
     const portadaImg = new Image(); portadaImg.src = 'portada.png';
     
-    // 🎨 SPRITE SHEETS (HOJAS 1 Y 2)
+    // 🎨 TRES HOJAS DE EMOJIS
     const spriteImg = new Image(); spriteImg.src = 'emojis-sprite.png';
-    let spriteLoaded = false;
     const spriteImg2 = new Image(); spriteImg2.src = 'emojis-sprite2.png';
-    let sprite2Loaded = false;
-
+    const spriteImg3 = new Image(); spriteImg3.src = 'emojis-sprite3.png';
+    
+    let spriteLoaded = false, sprite2Loaded = false, sprite3Loaded = false;
     const TOTAL_EMOJIS = 20;
     let emojiW = 0, emojiH = 0;
+    
     spriteImg.onload = () => { spriteLoaded = true; emojiW = spriteImg.width / TOTAL_EMOJIS; emojiH = spriteImg.height; };
-    spriteImg2.onload = () => { sprite2Loaded = true; };
+    spriteImg2.onload = () => sprite2Loaded = true;
+    spriteImg3.onload = () => sprite3Loaded = true;
 
+    // NAIA ANIMACIONES
     const naiaImages = [];
     ['naia1.png','naia2.png','naia3.png','naia4.png','naia5.png','naia6.png','naia7.png','naia8.png'].forEach((n,i) => { const im = new Image(); im.src = n; naiaImages[i] = im; });
     let currentNaiaImg = null;
@@ -330,9 +334,10 @@
         vy = fallSpeed + Math.random()*0.3;
       }
       
-      const useSheet2 = Math.floor((level - 1) / 2) % 2 !== 0;
-      // ✅ CORREGIDO: y: -30 restaurado
-      emojis.push({ x, y: -30, r:20, vy, emojiIdx, rot:0, rotSpd:(Math.random()-0.5)*0.05, side: side||1, sheet2: useSheet2 });
+      // 🔄 CICLO DE HOJAS CADA NIVEL (0, 1, 2, 0, 1...)
+      const sheetIdx = (level - 1) % 3;
+      
+      emojis.push({ x, y: -30, r:20, vy, emojiIdx, rot:0, rotSpd:(Math.random()-0.5)*0.05, side: side||1, sheetIdx });
     }
 
     function spawnParticles(x, y, count, color) { for(let i=0; i<count; i++) particles.push({x, y, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4-2, life:1.0, color, size:Math.random()*4+2}); }
@@ -374,7 +379,7 @@
         if(e.y>=b1.c-e.r && e.y<=b1.c+basketH/2) {
           if(gameMode==='1p' && e.x>b1.l && e.x<b1.r) { sharedScore++; caught=true; }
           else if(gameMode==='2p-coop' && ((e.x>b1.l&&e.x<b1.r)||(e.x>b2.l&&e.x<b2.r))) { sharedScore++; caught=true; }
-          else if(gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x<b1.r)||(e.side===2&&e.x>b2.l&&e.x<b2.r))) { if(e.side===1) score1++; else score2++; caught=true; }
+          else if(gameMode==='2p-vs' && ((e.side===1&&e.x>b1.l&&e.x<b1.r)||(e.side===2&&e.x>b2.l&&e.x>b2.r))) { if(e.side===1) score1++; else score2++; caught=true; }
         }
         if(caught) {
           playSound('catch'); collectedInLevel++; emojis.splice(i,1); spawnParticles(e.x, e.y, 8, '#FFD166'); spawnFloatingText(e.x, e.y-20, "+1", "#FFFFFF");
@@ -405,6 +410,7 @@
 
     function drawBasket(x, y, imgRef) { if(imgRef && imgRef.complete) ctx.drawImage(imgRef, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH); else { ctx.fillStyle='#D4A373'; ctx.fillRect(x-basketW/2, y-basketH/2, basketW, basketH); } }
 
+    // 🎨 DIBUJADO CON 3 HOJAS
     function draw(time = 0) {
       if(gameState === 'gameOver') return;
       ctx.save();
@@ -422,15 +428,23 @@
       else { drawBasket(basket1X, bY, cestaImg); drawBasket(basket2X, bY, alexImg); }
       
       if(emojiW > 0) {
-        const scale = 0.50, dw = emojiW*scale, dh = emojiH*scale;
+        // 📏 TAMAÑO DE EMOJIS AJUSTADO A 0.55
+        const scale = 0.55, dw = emojiW*scale, dh = emojiH*scale;
+        const sheets = [
+          { img: spriteImg, loaded: spriteLoaded },
+          { img: spriteImg2, loaded: sprite2Loaded },
+          { img: spriteImg3, loaded: sprite3Loaded }
+        ];
         for(let e of emojis) { 
-            const img = e.sheet2 ? spriteImg2 : spriteImg;
-            if(e.sheet2 ? sprite2Loaded : spriteLoaded) {
-                ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); 
-                ctx.drawImage(img, e.emojiIdx * emojiW, 0, emojiW, emojiH, -dw/2, -dh/2, dw, dh); ctx.restore(); 
-            }
+          const s = sheets[e.sheetIdx];
+          if(s.loaded) {
+            ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); 
+            ctx.drawImage(s.img, e.emojiIdx * emojiW, 0, emojiW, emojiH, -dw/2, -dh/2, dw, dh);
+            ctx.restore();
+          }
         }
       }
+      
       ctx.font='34px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
       for(let p of fallingPowerups) ctx.fillText(p.type==='magnet'?'🧲':'❓', p.x, p.y);
       for(let p of particles) { ctx.globalAlpha=p.life; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); }

@@ -78,18 +78,20 @@
     let alexLoaded = false; alexImg.onload = () => alexLoaded = true;
     const portadaImg = new Image(); portadaImg.src = 'portada.png';
     
-    // 🎨 TRES HOJAS DE EMOJIS
+    // 🎨 CUATRO HOJAS DE EMOJIS
     const spriteImg = new Image(); spriteImg.src = 'emojis-sprite.png';
     const spriteImg2 = new Image(); spriteImg2.src = 'emojis-sprite2.png';
     const spriteImg3 = new Image(); spriteImg3.src = 'emojis-sprite3.png';
+    const spriteImg4 = new Image(); spriteImg4.src = 'emojis-sprite4.png'; // ✅ NUEVA HOJA
     
-    let spriteLoaded = false, sprite2Loaded = false, sprite3Loaded = false;
+    let spriteLoaded = false, sprite2Loaded = false, sprite3Loaded = false, sprite4Loaded = false;
     const TOTAL_EMOJIS = 20;
     let emojiW = 0, emojiH = 0;
     
     spriteImg.onload = () => { spriteLoaded = true; emojiW = spriteImg.width / TOTAL_EMOJIS; emojiH = spriteImg.height; };
     spriteImg2.onload = () => sprite2Loaded = true;
     spriteImg3.onload = () => sprite3Loaded = true;
+    spriteImg4.onload = () => sprite4Loaded = true;
 
     // NAIA ANIMACIONES
     const naiaImages = [];
@@ -334,8 +336,8 @@
         vy = fallSpeed + Math.random()*0.3;
       }
       
-      // 🔄 CICLO DE HOJAS CADA NIVEL (0, 1, 2, 0, 1...)
-      const sheetIdx = (level - 1) % 3;
+      // 🔄 CICLO DE 4 HOJAS: 1→2→3→4→1...
+      const sheetIdx = (level - 1) % 4;
       
       emojis.push({ x, y: -30, r:20, vy, emojiIdx, rot:0, rotSpd:(Math.random()-0.5)*0.05, side: side||1, sheetIdx });
     }
@@ -410,7 +412,7 @@
 
     function drawBasket(x, y, imgRef) { if(imgRef && imgRef.complete) ctx.drawImage(imgRef, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH); else { ctx.fillStyle='#D4A373'; ctx.fillRect(x-basketW/2, y-basketH/2, basketW, basketH); } }
 
-    // 🎨 DIBUJADO CON 3 HOJAS
+    // 🎨 DIBUJADO CON 4 HOJAS
     function draw(time = 0) {
       if(gameState === 'gameOver') return;
       ctx.save();
@@ -428,12 +430,13 @@
       else { drawBasket(basket1X, bY, cestaImg); drawBasket(basket2X, bY, alexImg); }
       
       if(emojiW > 0) {
-        // 📏 TAMAÑO DE EMOJIS AJUSTADO A 0.55
         const scale = 0.55, dw = emojiW*scale, dh = emojiH*scale;
+        // Array con las 4 hojas
         const sheets = [
           { img: spriteImg, loaded: spriteLoaded },
           { img: spriteImg2, loaded: sprite2Loaded },
-          { img: spriteImg3, loaded: sprite3Loaded }
+          { img: spriteImg3, loaded: sprite3Loaded },
+          { img: spriteImg4, loaded: sprite4Loaded } // ✅ NUEVA HOJA
         ];
         for(let e of emojis) { 
           const s = sheets[e.sheetIdx];

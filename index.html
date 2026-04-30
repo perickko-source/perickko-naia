@@ -82,7 +82,7 @@
     const spriteImg = new Image(); spriteImg.src = 'emojis-sprite.png';
     const spriteImg2 = new Image(); spriteImg2.src = 'emojis-sprite2.png';
     const spriteImg3 = new Image(); spriteImg3.src = 'emojis-sprite3.png';
-    const spriteImg4 = new Image(); spriteImg4.src = 'emojis-sprite4.png'; // ✅ NUEVA HOJA
+    const spriteImg4 = new Image(); spriteImg4.src = 'emojis-sprite4.png';
     
     let spriteLoaded = false, sprite2Loaded = false, sprite3Loaded = false, sprite4Loaded = false;
     const TOTAL_EMOJIS = 20;
@@ -412,7 +412,7 @@
 
     function drawBasket(x, y, imgRef) { if(imgRef && imgRef.complete) ctx.drawImage(imgRef, x-basketW/2+basketOffX, y+basketOffY, basketW, basketH); else { ctx.fillStyle='#D4A373'; ctx.fillRect(x-basketW/2, y-basketH/2, basketW, basketH); } }
 
-    // 🎨 DIBUJADO CON 4 HOJAS
+    // 🎨 DIBUJADO CON TAMAÑOS DIFERENTES POR HOJA
     function draw(time = 0) {
       if(gameState === 'gameOver') return;
       ctx.save();
@@ -430,17 +430,22 @@
       else { drawBasket(basket1X, bY, cestaImg); drawBasket(basket2X, bY, alexImg); }
       
       if(emojiW > 0) {
-        const scale = 0.55, dw = emojiW*scale, dh = emojiH*scale;
         // Array con las 4 hojas
         const sheets = [
           { img: spriteImg, loaded: spriteLoaded },
           { img: spriteImg2, loaded: sprite2Loaded },
           { img: spriteImg3, loaded: sprite3Loaded },
-          { img: spriteImg4, loaded: sprite4Loaded } // ✅ NUEVA HOJA
+          { img: spriteImg4, loaded: sprite4Loaded }
         ];
+        
         for(let e of emojis) { 
           const s = sheets[e.sheetIdx];
           if(s.loaded) {
+            // ✅ ESCALA CONDICIONAL: Hojas 0 y 1 usan 0.55 | Hojas 2 y 3 usan 0.65
+            const scale = e.sheetIdx >= 2 ? 0.65 : 0.55;
+            const dw = emojiW * scale;
+            const dh = emojiH * scale;
+
             ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.rot); 
             ctx.drawImage(s.img, e.emojiIdx * emojiW, 0, emojiW, emojiH, -dw/2, -dh/2, dw, dh);
             ctx.restore();
